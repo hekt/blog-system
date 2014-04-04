@@ -37,16 +37,22 @@ renderXml doc = let ver = attr2text "version" $ xmlVersion doc
                        ++ map renderXml' (xmlElements doc)
 
 renderXml' :: XmlElement -> Text
-renderXml' (XmlElement tag attrs EmptyNode)     = renderEmptyTag tag attrs
-renderXml' (XmlElement tag attrs (TextNode t))  = renderTag tag attrs t
-renderXml' (XmlElement tag attrs (XmlNodes ns)) = renderTag tag attrs $ 
-                                                  T.concat $ map renderXml' ns
+renderXml' (XmlElement tag attrs content) =
+    case content of
+      EmptyNode   -> renderEmptyTag tag attrs
+      TextNode t  -> renderTag tag attrs t
+      XmlNodes ns -> renderTag tag attrs $ T.concat $ map renderXml' ns
 
 renderTag :: Text -> [(Text, Text)] -> Text -> Text
 renderTag tag attrs content = 
     let attrs' = attrs2texts attrs
     in T.concat [ "<", intercalate " " (tag: attrs'), ">"
                 , content, "</", tag, ">" ]
+
+renderEmptyTag :: Text -> [(Text, Text)] -> Text
+renderEmptyTag tag attrs =
+    let attrs' = attrs2texts attrs
+    in T.concat ["<", intercalate " " (tag: attrs'), "/>"]
 
 simpleElem :: Text -> Text -> XmlElement
 simpleElem tag content = XmlElement tag [] $ createTextNode content
@@ -56,11 +62,6 @@ attr2text a v = T.concat [a, "=", "\"", v, "\""]
 
 attrs2texts :: [(Text, Text)] -> [Text]
 attrs2texts = map (uncurry attr2text)
-
-renderEmptyTag :: Text -> [(Text, Text)] -> Text
-renderEmptyTag tag attrs =
-    let attrs' = attrs2texts attrs
-    in T.concat ["<", intercalate " " (tag: attrs'), "/>"]
 
 cdata :: Text -> Text
 cdata d = T.concat ["<![CDATA[", d, "]]>"]
