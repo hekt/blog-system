@@ -14,16 +14,8 @@ import           System.Locale (defaultTimeLocale)
 
 import Model
 import DB
+import XML
 
-
-data XmlElement = XmlElement { tagName    :: Text
-                             , attributes :: [(Text, Text)]
-                             , childNode  :: XmlContent }
-data XmlContent = EmptyNode | TextNode Text | XmlNodes [XmlElement] 
-
-
-dummyConf :: Configure
-dummyConf = Configure "note.hekt.org" "http://note.hekt.org/" "/Users/kaz/Works/blog-kari/tempaltes/article.html" "/Users/kaz/Works/blog-kari/html" "MyBlog" "127.0.0.1"
 
 atomFeed :: Configure -> [Article] -> IO ()
 atomFeed conf _ = do
@@ -39,78 +31,53 @@ generateXmlFile conf articles = let doc = generateXmlDoc conf articles
                                 in T.writeFile path doc
 
 generateXmlDoc :: Configure -> [Article] -> Text
-generateXmlDoc conf articles = T.concat [xmlDeclaration, renderXml feedElem]
-    where 
-      xmlDeclaration = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      feedElem = generateFeedElement conf articles
-
-renderXml :: XmlElement -> Text
-renderXml (XmlElement tag attrs EmptyNode)     = renderEmptyTag tag attrs
-renderXml (XmlElement tag attrs (TextNode t))  = renderTag tag attrs t
-renderXml (XmlElement tag attrs (XmlNodes ns)) = renderTag tag attrs $ 
-                                                 T.concat $ map renderXml ns
-
-renderTag :: Text -> [(Text, Text)] -> Text -> Text
-renderTag tag attrs content = 
-    let attrs' = attrs2texts attrs
-    in T.concat [ "<", intercalate " " (tag: attrs'), ">"
-                , content, "</", tag, ">" ]
-
-renderEmptyTag :: Text -> [(Text, Text)] -> Text
-renderEmptyTag tag attrs =
-    let attrs' = attrs2texts attrs
-    in T.concat ["<", intercalate " " (tag: attrs'), "/>"]
-
-attrs2texts :: [(Text, Text)] -> [Text]
-attrs2texts = map (\(a,v) -> T.concat [a, "=", "\"", v, "\""])
+generateXmlDoc conf articles = renderXml $ XmlDocument "1.0" "UTF-8"
+                               [generateFeedElement conf articles]
 
 generateFeedElement :: Configure -> [Article] -> XmlElement
 generateFeedElement conf articles = 
     XmlElement "feed" [("xmlns", "http://www.w3.org/2005/Atom")] $ 
-               XmlNodes  (elems ++ map generateEntryElement articles)
+               createXmlNodes (elems ++ map generateEntryElement articles)
         where 
           elems = map (\(t,a,c) -> XmlElement t a c)
-                  [ ("title", [], TextNode $ blogUrl conf)
-                  , ("updated", [], TextNode $ article2time $ head articles)
-                  , ("id", [], TextNode "tag:hekt.org,2005:blog2")
+                  [ ("title", [], createTextNode $ blogUrl conf)
+                  , ("updated", [], createTextNode $ 
+                              article2time $ head articles)
+                  , ("id", [], createTextNode "tag:hekt.org,2005:blog2")
                   , ( "author", []
-                    , XmlNodes [XmlElement "name" [] $ TextNode "hekt"])
+                    , createXmlNodes 
+                      [XmlElement "name" [] $ createTextNode "hekt"])
                   , ( "link", [("rel", "self"), ("href", atomUrl conf)]
-                    , EmptyNode)
+                    , createEmptyNode)
                   ]
 
 generateEntryElement :: Article -> XmlElement
 generateEntryElement article = XmlElement "entry" [] $ 
-                               XmlNodes (elems ++ categories)
+                               createXmlNodes (elems ++ categories)
     where 
-      elems = [ XmlElement "id" [] $ TextNode $ article2xmlId article
-              , XmlElement "updated" [] $ TextNode $ article2time article
-              , XmlElement "link" [("href", article2url article)] EmptyNode
+      elems = [ XmlElement "id" [] $ createTextNode $ article2xmlId article
+              , XmlElement "updated" [] $ createTextNode $ article2time article
+              , XmlElement "link" [("href", article2url article)] 
+                           createEmptyNode
               , XmlElement "title" [("type", "html")] $ 
-                      TextNode . cdata $ articleTitle article
+                      createTextNode . cdata $ articleTitle article
               , XmlElement "content" [("type", "html")] $
-                      TextNode . cdata $ articleContent article
+                      createTextNode . cdata $ articleContent article
               ]
       categories = map genCategoryTag $ articleTags article
 
 text2author :: Text -> XmlElement
-text2author t = XmlElement "name" [] $ TextNode t
-
-xelem :: Text -> [(Text, Text)] -> XmlContent -> XmlElement
-xelem = XmlElement
+text2author t = XmlElement "name" [] $ createTextNode t
 
 genCategoryTag :: Text -> XmlElement
-genCategoryTag tag = XmlElement "category" [("term", tag)] EmptyNode
-
-cdata :: Text -> Text
-cdata d = T.concat ["<![CDATA[", d, "]]>"]
+genCategoryTag tag = XmlElement "category" [("term", tag)] createEmptyNode
 
 article2xmlId :: Article -> Text
 article2xmlId a = T.concat [ "tag:hekt.org,2005:blog2.entry-"
                            , tshow $ articleIdNum a ]
 
 article2time :: Article -> Text
-article2time = pack . rfcTime . articleLastModified
+article2time = rfcTime . articleLastModified
 
 article2url :: Article -> Text
 article2url a = T.concat ["http://note.hekt.org/", tshow $ articleIdNum a]
@@ -120,6 +87,3 @@ atomUrl conf = blogUrl conf `append` "atom"
 
 tshow :: Show a => a -> Text
 tshow = pack . show
-
-rfcTime :: UTCTime -> String
-rfcTime  = formatTime defaultTimeLocale "%FT%TZ"
