@@ -158,8 +158,3 @@ instance ForTemplate MJDay where
                            , "year"  .= format "%Y"
                            , "date"  .= format "%F" ]
         where format s = formatTime defaultTimeLocale s $ ModifiedJulianDay d
-
-
--- LTSV special values
-emptyValue :: String
-emptyValue = "-"
