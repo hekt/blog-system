@@ -61,9 +61,3 @@ article2url a = T.concat ["http://note.hekt.org/", tshow $ articleIdNum a]
 tshow :: Show a => a -> Text
 tshow = pack . show
 
--- <url>
--- <loc>http://www.example.com/</loc>
--- <lastmod>2013-03-07</lastmod>
--- <changefreq>daily</changefreq>
--- <priority>1.0</priority>
--- </url>
