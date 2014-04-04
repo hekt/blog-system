@@ -18,8 +18,8 @@ import DB
 
 data XmlElement = XmlElement { tagName    :: Text
                              , attributes :: [(Text, Text)]
-                             , childNodes :: XmlContent }
-data XmlContent = EmptyNode | TextNode Text | XmlNode [XmlElement] 
+                             , childNode  :: XmlContent }
+data XmlContent = EmptyNode | TextNode Text | XmlNodes [XmlElement] 
 
 
 dummyConf :: Configure
@@ -28,7 +28,7 @@ dummyConf = Configure "note.hekt.org" "http://note.hekt.org/" "/Users/kaz/Works/
 atomFeed :: Configure -> [Article] -> IO ()
 atomFeed conf _ = do
   e <- accessToBlog conf $ rest =<< find (select [] "articles") 
-                {limit = 10, sort = ["pubdate" =: 1]}
+                {limit = 10, sort = ["pubdate" =: -1]}
   case e of 
     Left _         -> return ()
     Right articles -> generateXmlFile conf $ map parseBSON articles
@@ -45,10 +45,10 @@ generateXmlDoc conf articles = T.concat [xmlDeclaration, renderXml feedElem]
       feedElem = generateFeedElement conf articles
 
 renderXml :: XmlElement -> Text
-renderXml (XmlElement tag attrs EmptyNode)    = renderEmptyTag tag attrs
-renderXml (XmlElement tag attrs (TextNode t)) = renderTag tag attrs t
-renderXml (XmlElement tag attrs (XmlNode ns)) = renderTag tag attrs $ 
-                                                T.concat $ map renderXml ns
+renderXml (XmlElement tag attrs EmptyNode)     = renderEmptyTag tag attrs
+renderXml (XmlElement tag attrs (TextNode t))  = renderTag tag attrs t
+renderXml (XmlElement tag attrs (XmlNodes ns)) = renderTag tag attrs $ 
+                                                 T.concat $ map renderXml ns
 
 renderTag :: Text -> [(Text, Text)] -> Text -> Text
 renderTag tag attrs content = 
@@ -67,22 +67,21 @@ attrs2texts = map (\(a,v) -> T.concat [a, "=", "\"", v, "\""])
 generateFeedElement :: Configure -> [Article] -> XmlElement
 generateFeedElement conf articles = 
     XmlElement "feed" [("xmlns", "http://www.w3.org/2005/Atom")] $ 
-               XmlNode (elems ++ map generateEntryElement articles)
+               XmlNodes  (elems ++ map generateEntryElement articles)
         where 
           elems = map (\(t,a,c) -> XmlElement t a c)
                   [ ("title", [], TextNode $ blogUrl conf)
                   , ("updated", [], TextNode $ article2time $ head articles)
                   , ("id", [], TextNode "tag:hekt.org,2005:blog2")
-                  , ("author", [], XmlNode 
-                                 [XmlElement "name" [] $ TextNode "hekt"])
-                  , ("link"
-                    , [("rel", "self"), ("href", blogUrl conf `append` "atom")]
+                  , ( "author", []
+                    , XmlNodes [XmlElement "name" [] $ TextNode "hekt"])
+                  , ( "link", [("rel", "self"), ("href", atomUrl conf)]
                     , EmptyNode)
                   ]
 
 generateEntryElement :: Article -> XmlElement
 generateEntryElement article = XmlElement "entry" [] $ 
-                               XmlNode (elems ++ categories)
+                               XmlNodes (elems ++ categories)
     where 
       elems = [ XmlElement "id" [] $ TextNode $ article2xmlId article
               , XmlElement "updated" [] $ TextNode $ article2time article
@@ -115,6 +114,9 @@ article2time = pack . rfcTime . articleLastModified
 
 article2url :: Article -> Text
 article2url a = T.concat ["http://note.hekt.org/", tshow $ articleIdNum a]
+
+atomUrl :: Configure -> Text
+atomUrl conf = blogUrl conf `append` "atom"
 
 tshow :: Show a => a -> Text
 tshow = pack . show
