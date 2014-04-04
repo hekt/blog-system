@@ -17,6 +17,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import           Data.Time.Calendar ( Day (ModifiedJulianDay)
                                     , toModifiedJulianDay )
+import           Data.Time.Clock (UTCTime)
 import           Data.Time.Format (formatTime)
 import           System.Locale (defaultTimeLocale)
 
@@ -88,13 +89,14 @@ instance FromJSON ArticleYaml where
     parseJSON _          = mzero
 
 data Article = Article 
-    { articleTitle   :: T.Text
-    , articleIdNum   :: ArticleId
-    , articlePubdate :: MJDay
-    , articleTags    :: [T.Text]
-    , articleContent :: T.Text
-    , articleSourceFile :: String
-    , articleIsImported :: Bool
+    { articleTitle        :: T.Text
+    , articleIdNum        :: ArticleId
+    , articlePubdate      :: MJDay
+    , articleTags         :: [T.Text]
+    , articleContent      :: T.Text
+    , articleSourceFile   :: String
+    , articleLastModified :: UTCTime
+    , articleIsImported   :: Bool
     } deriving (Show)
 instance FromJSON Article where
     parseJSON (Object v) = Article
@@ -104,16 +106,18 @@ instance FromJSON Article where
                            <*> v .: "tags"
                            <*> v .: "content"
                            <*> v .: "source_file"
+                           <*> v .: "last_modified"
                            <*> v .: "imported"
     parseJSON _          = mzero
 instance ToJSON Article where
-    toJSON a = object [ "title"       .= articleTitle a
-                      , "id"          .= articleIdNum a
-                      , "pubdate"     .= articlePubdate a
-                      , "tags"        .= articleTags a
-                      , "content"     .= articleContent a 
-                      , "source_file" .= articleSourceFile a
-                      , "imported"    .= articleIsImported a ]
+    toJSON a = object [ "title"         .= articleTitle a
+                      , "id"            .= articleIdNum a
+                      , "pubdate"       .= articlePubdate a
+                      , "tags"          .= articleTags a
+                      , "content"       .= articleContent a 
+                      , "source_file"   .= articleSourceFile a
+                      , "last_modified" .= articleLastModified a
+                      , "imported"      .= articleIsImported a ]
 instance FromBSON Article where
     parseBSON doc = Article
                     ("title" `at` doc)
@@ -122,15 +126,17 @@ instance FromBSON Article where
                     ("tags" `at` doc)
                     ("content" `at` doc)
                     ("source_file" `at` doc)
+                    ("last_modified" `at` doc)
                     ("imported" `at` doc)
 instance ToBSON Article where
-    toBSON a = [ "title"       =: articleTitle a
-               , "id"          =: articleIdNum a
-               , "pubdate"     =: articlePubdate a
-               , "tags"        =: articleTags a
-               , "content"     =: articleContent a 
-               , "source_file" =: articleSourceFile a
-               , "imported"    =: articleIsImported a ]
+    toBSON a = [ "title"         =: articleTitle a
+               , "id"            =: articleIdNum a
+               , "pubdate"       =: articlePubdate a
+               , "tags"          =: articleTags a
+               , "content"       =: articleContent a 
+               , "source_file"   =: articleSourceFile a
+               , "last_modified" =: articleLastModified a
+               , "imported"      =: articleIsImported a ]
 instance ForTemplate Article where
     forTemplate a = object [ "title"   .= articleTitle a
                            , "id"      .= articleIdNum a

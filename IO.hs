@@ -86,13 +86,15 @@ getArticleFromFile' :: AbsPath -> ArticleId -> IO (Either String Article)
 getArticleFromFile' file aid = runErrorT $ do
   (yaml, html) <- ErrorT $ decodeYamlAndGfmFile file
   date         <- ErrorT . return $ getDayFromText $ yamlPubdate yaml
-  return Article { articleTitle      = yamlTitle yaml
-                 , articleIdNum      = aid
-                 , articlePubdate    = date
-                 , articleTags       = csv2texts $ yamlTags yaml
-                 , articleContent    = TL.toStrict $ renderHtml html
-                 , articleSourceFile = file
-                 , articleIsImported = False
+  time         <- liftIO $ getLastModified file
+  return Article { articleTitle        = yamlTitle yaml
+                 , articleIdNum        = aid
+                 , articlePubdate      = date
+                 , articleTags         = csv2texts $ yamlTags yaml
+                 , articleContent      = TL.toStrict $ renderHtml html
+                 , articleSourceFile   = file
+                 , articleLastModified = time
+                 , articleIsImported   = False
                  }
 
 decodeYamlFile :: FromJSON a => FilePath -> IO (Either String a)
