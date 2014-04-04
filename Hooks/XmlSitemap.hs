@@ -16,10 +16,6 @@ import DB
 import XML
 
 
-dummyConf :: Configure
-dummyConf = Configure "note.hekt.org" "http://note.hekt.org/" "/Users/kaz/Works/blog-kari/tempaltes/article.html" "/Users/kaz/Works/blog-kari/html" "MyBlog" "127.0.0.1"
-
-
 xmlSitemap :: Configure -> [Article] -> IO ()
 xmlSitemap conf _ = do
   e <- accessToBlog conf $ rest =<< find (select [] "articles")
