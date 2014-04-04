@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module XML
     ( XmlDocument (XmlDocument)
     , XmlElement (XmlElement)
