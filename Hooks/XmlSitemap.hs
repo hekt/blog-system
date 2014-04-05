@@ -38,12 +38,12 @@ generateSitemap conf mas = XmlDocument "1.0" "UTF-8" $
       indexPage = urlElem (blogUrl conf) (rfcTime $ blogLastMod mas)
                   "weekly" "0.5"
       f ma = do
-        url <- fmap id2url $ mArticleIdNum ma
+        url <- fmap (id2url conf) $ mArticleIdNum ma
         mod <- fmap rfcTime $ mArticleLastModified ma
         return $ urlElem url mod "never" "1.0"
-      elem ns = [XmlElement "urlset" 
-                 [("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")]
-                 (createXmlNodes ns)]
+      elem ns = [ XmlElement "urlset" 
+                  [("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9")]
+                  (createXmlNodes ns) ]
 
 blogLastMod :: [MaybeArticle] -> UTCTime
 blogLastMod articles = maximum . catMaybes $ map mArticleLastModified articles
@@ -55,8 +55,8 @@ urlElem loc mod freq pri = XmlElement "url" [] $ createXmlNodes
                            , simpleElem "changefreq" freq
                            , simpleElem "priority" pri ]
 
-id2url :: Int -> Text
-id2url a = T.concat ["http://note.hekt.org/", tshow a]
+id2url :: Configure -> Int -> Text
+id2url conf a = T.concat [blogUrl conf, tshow a]
 
 tshow :: Show a => a -> Text
 tshow = pack . show
