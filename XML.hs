@@ -49,13 +49,13 @@ renderXml' (XmlElement tag attrs content) =
 
 renderTag :: TagName -> [Attribute] -> Text -> Text
 renderTag tag attrs content = 
-    let attrs' = attrs2texts attrs
+    let attrs' = map attr2text attrs
     in T.concat [ "<", intercalate " " (tag: attrs'), ">"
                 , content, "</", tag, ">" ]
 
 renderEmptyTag :: TagName -> [Attribute] -> Text
 renderEmptyTag tag attrs =
-    let attrs' = attrs2texts attrs
+    let attrs' = map attr2text attrs
     in T.concat ["<", intercalate " " (tag: attrs'), "/>"]
 
 simpleElem :: TagName -> Text -> XmlElement
@@ -63,9 +63,6 @@ simpleElem tag content = XmlElement tag [] $ createTextNode content
 
 attr2text :: Attribute -> Text
 attr2text (a, v) = T.concat [a, "=", "\"", v, "\""]
-
-attrs2texts :: [Attribute] -> [Text]
-attrs2texts = map attr2text
 
 cdata :: Text -> Text
 cdata d = T.concat ["<![CDATA[", d, "]]>"]
