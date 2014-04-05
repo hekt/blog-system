@@ -88,7 +88,7 @@ runWithDB conf = do
 runWith :: Configure -> [Either String Article] -> IO (Either String [Article])
 runWith conf eitherArticles = runErrorT $ do
   let (errors, articles) = partitionEithers eitherArticles
-  template  <- ErrorT $ decodeTemplateFile $ articleTemplateFile conf
+  template  <- liftIO $ decodeTemplateFile $ articleTemplateFile conf
   articles' <- liftIO $ doBeforeSaveHooks conf articles
   liftIO $ forM_ articles' $ generateHtmlFileWithLog template conf
   liftIO $ forM_ errors $ putLog ErrorLog

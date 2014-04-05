@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Model where
 
@@ -12,21 +13,21 @@ import           Data.Aeson
 import           Data.Bson (Document, (=:), at, look, lookup, cast)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
+import           Data.Data (Data, Typeable)
 import           Data.Maybe (fromJust)
 import           Data.Monoid
 import           Data.List (intercalate)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Internal as TI
 import           Data.Time.Calendar ( Day (ModifiedJulianDay)
                                     , toModifiedJulianDay )
 import           Data.Time.Clock ( UTCTime (UTCTime) )
 import           Data.Time.Format (formatTime)
 import           Network.HTTP (urlEncode)
+import           Text.Hastache
 import           System.Locale (defaultTimeLocale)
 
-
-class ForTemplate a where
-    forTemplate :: a -> Value
 
 class ToBSON a where
     toBSON :: a -> Document
@@ -48,7 +49,7 @@ instance Minimal Bool where
     minimal = False
 instance Minimal UTCTime where
     minimal = UTCTime (ModifiedJulianDay 0) 0
-instance Minimal MJDay where
+instance Minimal Integer where
     minimal = 0
 instance Minimal (Maybe a) where
     minimal = Nothing
@@ -59,6 +60,7 @@ type ByteStringFile = (FilePath, B.ByteString)
 type ArticleId = Int
 type PathWithId = (FilePath, ArticleId)
 type AbsPath = FilePath
+type MJDay = Integer
 
 
 data LogLevel = DebugLog | InfoLog | WarnLog | ErrorLog deriving (Eq, Ord)
@@ -68,6 +70,11 @@ instance Show LogLevel where
     show WarnLog  = "WARN "
     show ErrorLog = "ERROR"
 
+data TemplateData = TemplateData
+    { config_data  :: Configure
+    , article_data :: TArticle
+    } deriving (Data, Typeable)
+
 data Configure = Configure
     { blogTitle           :: T.Text
     , blogUrl             :: T.Text
@@ -75,7 +82,7 @@ data Configure = Configure
     , htmlDirectory       :: String
     , databaseName        :: T.Text
     , databaseHost        :: String
-    }
+    } deriving (Data, Typeable)
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
                            <$> v .: "title"
@@ -93,10 +100,6 @@ instance ToJSON Configure where
                       , "database_name"    .= databaseName c
                       , "database_host"    .= databaseHost c
                       ]
-instance ForTemplate Configure where
-    forTemplate c = object [ "title" .= blogTitle c
-                           , "url"   .= blogUrl c
-                           ]
 
 data ArticleYaml = ArticleYaml
     { yamlTitle   :: T.Text
@@ -119,7 +122,7 @@ data Article = Article
     , articleSourceFile   :: String
     , articleLastModified :: UTCTime
     , articleIsImported   :: Bool
-    } deriving (Show)
+    } deriving (Show, Data, Typeable)
 instance FromJSON Article where
     parseJSON (Object v) = Article
                            <$> v .: "title"
@@ -160,14 +163,42 @@ instance ToBSON Article where
                , "source_file"   =: articleSourceFile a
                , "last_modified" =: articleLastModified a
                , "imported"      =: articleIsImported a ]
-instance ForTemplate Article where
-    forTemplate a = object [ "title"   .= articleTitle a
-                           , "id"      .= articleIdNum a
-                           , "pubdate" .= (forTemplate $ articlePubdate a)
-                           , "tags"    .= (map f $ articleTags a)
-                           , "content" .= articleContent a ]
-        where f t = let t' = T.unpack t
-                    in object ["tag" .= t', "encoded_tag" .= urlEncode t']
+
+data TArticle = TArticle 
+    { article_title :: T.Text
+    , article_id :: ArticleId
+    , article_pubdate :: TPubdate
+    , article_tags :: [TTag]
+    , article_content :: T.Text
+    } deriving (Data, Typeable)
+
+data TPubdate = TPubdate
+    { article_date :: T.Text
+    , article_year :: T.Text
+    , article_month :: T.Text
+    , article_day :: T.Text
+    } deriving (Data, Typeable)
+data TTag = TTag
+    { article_tag :: T.Text
+    , article_encoded_tag :: T.Text
+    } deriving (Data, Typeable)
+
+article2tArticle :: Article -> TArticle
+article2tArticle article = 
+    TArticle
+    { article_title = articleTitle article
+    , article_id    = articleIdNum article
+    , article_pubdate = pd
+    , article_tags    = ts
+    , article_content = articleContent article}
+    where pd = let f s = T.pack . formatTime defaultTimeLocale s $ 
+                         ModifiedJulianDay $ articlePubdate article
+               in TPubdate { article_date = f "%F"
+                           , article_year = f "%Y"
+                           , article_month = f "%b"
+                           , article_day   = f "%e" }
+          ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
+               articleTags article
 
 instance Minimal Article where
     minimal = Article minimal minimal minimal minimal
@@ -198,15 +229,6 @@ instance FromBSON MaybeArticle where
 instance Minimal MaybeArticle where
     minimal = MaybeArticle minimal minimal minimal minimal
                               minimal minimal minimal minimal
-
-type MJDay = Integer
-instance ForTemplate MJDay where
-    forTemplate d = object [ "month" .= format "%b"
-                           , "day"   .= format "%e"
-                           , "year"  .= format "%Y"
-                           , "date"  .= format "%F" ]
-        where format s = formatTime defaultTimeLocale s $ ModifiedJulianDay d
-
 
 mArticleToArticle :: MaybeArticle -> Article
 mArticleToArticle ma = Article

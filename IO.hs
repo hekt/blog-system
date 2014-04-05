@@ -28,8 +28,10 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
 import           Data.Maybe (listToMaybe)
 import           Data.Text (Text, strip, splitOn, unpack)
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.IO as TL
 import           Data.Time.Calendar
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
@@ -38,6 +40,8 @@ import           Data.Yaml
 import           Network.HTTP (urlEncode)
 import           Text.Blaze.Html (Html)
 import           Text.Blaze.Html.Renderer.Text (renderHtml)
+import           Text.Hastache
+import           Text.Hastache.Context
 import           Text.Pandoc
 import           Text.Pandoc.UTF8 (toString)
 import           Text.Regex.Posix
@@ -114,28 +118,28 @@ decodeYamlAndGfmFile file = runErrorT $ do
   let html = gfmStr2html $ toString gfm
   return (obj, html)
 
-decodeTemplateFile :: FilePath -> IO (Either String Template)
-decodeTemplateFile file = T.readFile file >>= return . compileTemplate
+decodeTemplateFile :: FilePath -> IO Text
+decodeTemplateFile file = readFile file >>= return . encodeStr
 
 
 -- generate file
 
-generateHtmlFile :: Template -> Configure -> Article -> IO ()
-generateHtmlFile template conf article = do
-  let dir = htmlDirectory conf
-      name = (show $ articleIdNum article) ++ ".html"
-      obj = object [ "blog"    .= forTemplate conf
-                   , "article" .= forTemplate article ]
-      body = renderTemplate template obj
-  BL.writeFile (dir </> name) body
-
-generateHtmlFileWithLog :: Template -> Configure -> Article -> IO ()
+generateHtmlFileWithLog :: Text -> Configure -> Article -> IO ()
 generateHtmlFileWithLog template conf article = do
   generateHtmlFile template conf article
   putLog InfoLog $ unwords [ "Successfully generated"
                            , getHtmlFilePath conf article
                            , "from"
                            , articleSourceFile article ]
+
+generateHtmlFile :: Text -> Configure -> Article -> IO ()
+generateHtmlFile template conf article = do
+  let dir = htmlDirectory conf
+      name = (show $ articleIdNum article) ++ ".html"
+      tempData = TemplateData conf $ article2tArticle article
+      
+  res <- hastacheStr defaultConfig template $ mkGenericContext tempData
+  TL.writeFile (dir </> name) res
 
 
 -- remove file
