@@ -35,6 +35,7 @@ import           Data.Time.Clock
 import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import           Data.Time.Format (formatTime)
 import           Data.Yaml
+import           Network.HTTP (urlEncode)
 import           Text.Blaze.Html (Html)
 import           Text.Blaze.Html.Renderer.Text (renderHtml)
 import           Text.Pandoc
@@ -123,7 +124,7 @@ generateHtmlFile :: Template -> Configure -> Article -> IO ()
 generateHtmlFile template conf article = do
   let dir = htmlDirectory conf
       name = (show $ articleIdNum article) ++ ".html"
-      obj = object [ "blog" .= forTemplate conf
+      obj = object [ "blog"    .= forTemplate conf
                    , "article" .= forTemplate article ]
       body = renderTemplate template obj
   BL.writeFile (dir </> name) body
