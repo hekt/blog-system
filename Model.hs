@@ -195,13 +195,6 @@ instance Minimal MaybeArticle where
     minimal = MaybeArticle minimal minimal minimal minimal
                               minimal minimal minimal minimal
 
-data ArticleDate = ArticleDate
-    { articleDate  :: T.Text
-    , articleMonth :: T.Text
-    , articleDay   :: T.Text
-    , articleYear  :: T.Text
-    }
-
 type MJDay = Integer
 instance ForTemplate MJDay where
     forTemplate d = object [ "month" .= format "%b"
