@@ -141,14 +141,15 @@ instance ToJSON Article where
                       , "imported"      .= articleIsImported a ]
 instance FromBSON Article where
     parseBSON doc = Article
-                    ("title" `at` doc)
-                    ("id" `at` doc)
-                    ("pubdate" `at` doc)
-                    ("tags" `at` doc)
-                    ("content" `at` doc)
-                    ("source_file" `at` doc)
-                    ("last_modified" `at` doc)
-                    ("imported" `at` doc)
+                    { articleTitle = "title" `at` doc
+                    , articleIdNum = "id" `at` doc
+                    , articlePubdate = "pubdate" `at` doc
+                    , articleTags    = "tags" `at` doc
+                    , articleContent = "content" `at` doc
+                    , articleSourceFile = "source_file" `at` doc
+                    , articleLastModified = "last_modified" `at` doc
+                    , articleIsImported   = "imported" `at` doc
+                    }
 instance ToBSON Article where
     toBSON a = [ "title"         =: articleTitle a
                , "id"            =: articleIdNum a
