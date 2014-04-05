@@ -4,20 +4,22 @@
 
 module Model where
 
+import           Prelude hiding (lookup)
 import           Control.Applicative ((<$>), (<*>), pure)
 import           Control.Monad (mzero)
 import           Control.Monad.Error
 import           Data.Aeson
-import           Data.Bson (Document, (=:), at, look)
+import           Data.Bson (Document, (=:), at, look, lookup, cast)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
+import           Data.Maybe (fromJust)
 import           Data.Monoid
 import           Data.List (intercalate)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import           Data.Time.Calendar ( Day (ModifiedJulianDay)
                                     , toModifiedJulianDay )
-import           Data.Time.Clock (UTCTime)
+import           Data.Time.Clock ( UTCTime (UTCTime) )
 import           Data.Time.Format (formatTime)
 import           System.Locale (defaultTimeLocale)
 
@@ -30,6 +32,25 @@ class ToBSON a where
 
 class FromBSON a where
     parseBSON :: Document -> a
+
+class Minimal a where
+    minimal :: a
+
+
+instance Minimal T.Text where
+    minimal = ""
+instance Minimal Int where
+    minimal = 0
+instance Minimal ([] a) where
+    minimal = []
+instance Minimal Bool where
+    minimal = False
+instance Minimal UTCTime where
+    minimal = UTCTime (ModifiedJulianDay 0) 0
+instance Minimal MJDay where
+    minimal = 0
+instance Minimal (Maybe a) where
+    minimal = Nothing
 
 
 type TextFile = (FilePath, T.Text)
@@ -143,6 +164,35 @@ instance ForTemplate Article where
                            , "pubdate" .= (forTemplate $ articlePubdate a)
                            , "tags"    .= articleTags a
                            , "content" .= articleContent a ]
+instance Minimal Article where
+    minimal = Article minimal minimal minimal minimal
+                         minimal minimal minimal minimal
+
+data MaybeArticle = MaybeArticle 
+    { mArticleTitle :: Maybe T.Text
+    , mArticleIdNum :: Maybe Int
+    , mArticlePubdate :: Maybe MJDay
+    , mArticleTags    :: Maybe [T.Text]
+    , mArticleContent :: Maybe T.Text
+    , mArticleSourceFile :: Maybe String
+    , mArticleLastModified :: Maybe UTCTime
+    , mArticleIsImported   :: Maybe Bool
+    }
+instance FromBSON MaybeArticle where
+    parseBSON doc = MaybeArticle 
+                    { mArticleTitle = f "title"
+                    , mArticleIdNum = f "id"
+                    , mArticlePubdate = f "pubdate"
+                    , mArticleTags    = f "tags"
+                    , mArticleContent = f "content"
+                    , mArticleSourceFile = f "source_file"
+                    , mArticleLastModified = f "last_modified"
+                    , mArticleIsImported   = f "imported"
+                    } 
+        where f l = l `look` doc >>= cast
+instance Minimal MaybeArticle where
+    minimal = MaybeArticle minimal minimal minimal minimal
+                              minimal minimal minimal minimal
 
 data ArticleDate = ArticleDate
     { articleDate  :: T.Text
@@ -158,3 +208,16 @@ instance ForTemplate MJDay where
                            , "year"  .= format "%Y"
                            , "date"  .= format "%F" ]
         where format s = formatTime defaultTimeLocale s $ ModifiedJulianDay d
+
+
+mArticleToArticle :: MaybeArticle -> Article
+mArticleToArticle ma = Article
+                       { articleTitle = f mArticleTitle
+                       , articleIdNum = f mArticleIdNum
+                       , articlePubdate = f mArticlePubdate
+                       , articleTags    = f mArticleTags 
+                       , articleContent = f mArticleContent
+                       , articleSourceFile = f mArticleSourceFile
+                       , articleLastModified = f mArticleLastModified
+                       , articleIsImported   = f mArticleIsImported }
+    where f g = maybe minimal id $ g ma
