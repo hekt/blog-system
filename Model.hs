@@ -21,6 +21,7 @@ import           Data.Time.Calendar ( Day (ModifiedJulianDay)
                                     , toModifiedJulianDay )
 import           Data.Time.Clock ( UTCTime (UTCTime) )
 import           Data.Time.Format (formatTime)
+import           Network.HTTP (urlEncode)
 import           System.Locale (defaultTimeLocale)
 
 
@@ -163,8 +164,11 @@ instance ForTemplate Article where
     forTemplate a = object [ "title"   .= articleTitle a
                            , "id"      .= articleIdNum a
                            , "pubdate" .= (forTemplate $ articlePubdate a)
-                           , "tags"    .= articleTags a
+                           , "tags"    .= (map f $ articleTags a)
                            , "content" .= articleContent a ]
+        where f t = let t' = T.unpack t
+                    in object ["tag" .= t', "encoded_tag" .= urlEncode t']
+
 instance Minimal Article where
     minimal = Article minimal minimal minimal minimal
                          minimal minimal minimal minimal
