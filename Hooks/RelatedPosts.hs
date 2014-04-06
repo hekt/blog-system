@@ -11,6 +11,7 @@ import           Data.Text (Text)
 import           Database.MongoDB hiding (sort, lookup, count)
 
 import Model
+import DB
 
 relatedPosts :: Configure -> [Article] -> IO ()
 relatedPosts conf articles = do
@@ -31,7 +32,7 @@ findByTags conf pipe tags = do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select (buildSelectorByTags tags) "articles")
   case e of
-    Left  err  -> throwIO . userError $ show err
+    Left  err  -> throwIO $ failureToIOE err
     Right docs -> return docs
 
 calcRelated :: [(Text, Float)] -> [Text] -> [Document] -> [(ArticleId, Float)]
@@ -43,7 +44,7 @@ getScoreList conf pipe = do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select [] "articles") { project = ["tags" =: 1] }
   case e of 
-    Left  err  -> throwIO . userError $ show err
+    Left  err  -> throwIO $ failureToIOE err
     Right docs -> return $ generateScoreList $ concatMap doc2tags docs
 
 buildSelectorByTags :: [Text] -> Document

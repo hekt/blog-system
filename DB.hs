@@ -11,6 +11,7 @@ module DB
     , getLastRunTime
     , resetDB
     , accessToBlog
+    , failureToIOE
     ) where
 
 import           Control.Exception
@@ -45,18 +46,19 @@ getLatestIdNumber conf = do
   e <- accessToBlog conf $ findOne (select [] "articles") 
        {sort = ["id" =: -1], project = ["id" =: 1]}
   case e of
-    Left  err      -> throwIO . userError $ show err
+    Left  err      -> throwIO $ failureToIOE err
     Right (Just d) -> return $ "id" `at` d
     Right Nothing  -> do
-           putLog WarnLog $ "Failed to get Latest ID Number. use 0"
-           return 0
+           let m = minimal :: Int
+           putLog WarnLog $ "Failed to get Latest ID Number. use " ++ show m
+           return m
 
 getKnownList :: Configure -> IO [FilePath]
 getKnownList conf = do
   e <- accessToBlog conf $ 
        rest =<< find (select [] "articles") {project = ["source_file" =: 1]}
   case e of
-    Left  err  -> throwIO . userError $ show err
+    Left  err  -> throwIO $ failureToIOE err
     Right docs -> return $ map ("source_file" `at`) docs
 
 getAllArticleSourceAndIds :: Configure -> IO [(FilePath, Int)]
@@ -81,11 +83,12 @@ getLastRunTime conf = do
   e <- accessToBlog conf $ 
        findOne (select [] "last_run") {project = ["time" =: 1]}
   case e of
-    Left  err      -> throwIO . userError $ show err
+    Left  err      -> throwIO $ failureToIOE err
     Right (Just d) -> return $ "time" `at` d
     Right Nothing  -> do
-           putLog WarnLog "Failed to get Last run time. use 1858-11-17"
-           return minimal
+           let m = minimal :: UTCTime
+           putLog WarnLog $ "Failed to get Last run time. use " ++ show m
+           return m
 
 resetDB :: Configure -> IO ()
 resetDB conf = do
@@ -95,3 +98,7 @@ resetDB conf = do
   access pipe master dbName $ delete (select [] "last_run")
   access pipe master dbName $ delete (select [] "articles")
   close pipe
+
+failureToIOE :: Failure -> IOError
+failureToIOE (ConnectionFailure e) = e
+failureToIOE e                     = userError $ show e
