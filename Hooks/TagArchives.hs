@@ -53,6 +53,8 @@ generateTagArchive template conf tag atcs = do
               map (article2tArticle . mArticleToArticle) atcs
   result   <- hastacheStr defaultConfig template $ mkGenericContext tatcs
   TL.writeFile (dir </> name) result
+  putLog InfoLog $ unwords [ "TagArchive: Successfully generated"
+                           , dir </> name ]
 
 getDocsByTag :: Configure -> Pipe -> Text -> IO (Either Failure [Document])
 getDocsByTag conf pipe tag = 

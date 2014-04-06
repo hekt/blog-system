@@ -32,7 +32,9 @@ generateSitemapFile conf mas =
         path = case "xml_sitemap_file" `M.lookup` optConfs conf of
                  Just p  -> p
                  Nothing -> htmlDirectory conf </> "sitemap.xml"
-    in T.writeFile path $ renderXml doc
+    in do T.writeFile path $ renderXml doc
+          putLog InfoLog $ unwords [ "XmlSitemap: Successfully generated"
+                                   , path ]
 
 generateSitemap :: Configure -> [MaybeArticle] -> XmlDocument
 generateSitemap conf mas = XmlDocument "1.0" "UTF-8" $

@@ -14,6 +14,7 @@ import           System.FilePath ((</>))
 import           System.Locale (defaultTimeLocale)
 
 import Model
+import IO
 import DB
 import XML
 
@@ -24,7 +25,7 @@ atomFeed conf _ = do
                 {limit = 10, sort = ["pubdate" =: -1]}
   case e of 
     Left _         -> return ()
-    Right articles -> generateXmlFile conf $ map parseBSON articles
+    Right articles -> do generateXmlFile conf $ map parseBSON articles
 
 generateXmlFile :: Configure -> [Article] -> IO ()
 generateXmlFile conf articles = 
@@ -32,7 +33,8 @@ generateXmlFile conf articles =
         path = case "atom_feed_file" `M.lookup` optConfs conf of
                  Just p  -> p
                  Nothing -> htmlDirectory conf </> "atom.xml"
-    in T.writeFile path doc
+    in do T.writeFile path doc
+          putLog InfoLog $ unwords ["AtomFeed: Successfully generated", path]
 
 generateXmlDoc :: Configure -> [Article] -> Text
 generateXmlDoc conf articles = renderXml $ XmlDocument "1.0" "UTF-8"
