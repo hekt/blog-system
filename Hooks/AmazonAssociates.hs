@@ -44,13 +44,14 @@ breakOnEnd' pat src = let (a, b) = breakOnEnd pat src
 generateTag :: Text -> Text -> Text
 generateTag name asin = 
     T.concat [ "<dl class=\"amazon-associates\">"
+             , "<dt class=\"image\">商品画像</dt>"
+             , "<dd class=\"image\">"
+             , "<a href=\"", asin2url asin, "\">"
+             , "<img src=\"", asin2img asin, "\">", "</a>"
+             , "</dd>"
              , "<dt class=\"name\">商品名</dt>"
              , "<dd class=\"name\">"
              , "<a href=\"", asin2url asin, "\">", name, "</a>"
-             , "</dd>"
-             , "<dt class=\"image\">画像</dt>"
-             , "<dd class=\"image\">"
-             , "<img src=\"", asin2img asin, "\">"
              , "</dd>"
              , "</dl>" ]
 
