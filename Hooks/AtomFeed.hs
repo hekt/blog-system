@@ -24,8 +24,8 @@ atomFeed conf _ = do
   e <- accessToBlog conf $ rest =<< find (select [] "articles") 
                 {limit = 10, sort = ["pubdate" =: -1]}
   case e of 
-    Left _         -> return ()
-    Right articles -> do generateXmlFile conf $ map parseBSON articles
+    Left  msg  -> putLog ErrorLog $ "AtomFeed: " ++ show msg
+    Right docs -> do generateXmlFile conf $ map parseBSON docs
 
 generateXmlFile :: Configure -> [Article] -> IO ()
 generateXmlFile conf articles = 
