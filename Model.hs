@@ -14,6 +14,7 @@ import           Data.Bson (Document, (=:), at, look, lookup, cast)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import           Data.Data (Data, Typeable)
+import qualified Data.Map as M
 import           Data.Maybe (fromJust)
 import           Data.Monoid
 import           Data.List (intercalate)
@@ -82,7 +83,8 @@ data Configure = Configure
     , htmlDirectory       :: String
     , databaseName        :: T.Text
     , databaseHost        :: String
-    } deriving (Data, Typeable)
+    , optConfs            :: M.Map String String
+    } deriving (Data, Typeable, Show)
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
                            <$> v .: "title"
@@ -91,6 +93,7 @@ instance FromJSON Configure where
                            <*> v .: "html_directory"
                            <*> v .: "database_name"
                            <*> v .: "database_host"
+                           <*> v .: "options"
     parseJSON _          = mzero
 instance ToJSON Configure where
     toJSON c = object [ "title"            .= blogTitle c
@@ -99,6 +102,7 @@ instance ToJSON Configure where
                       , "html_directory"   .= htmlDirectory c
                       , "database_name"    .= databaseName c
                       , "database_host"    .= databaseHost c
+                      , "options"          .= optConfs c
                       ]
 
 data ArticleYaml = ArticleYaml
@@ -165,38 +169,38 @@ instance ToBSON Article where
                , "imported"      =: articleIsImported a ]
 
 data TArticle = TArticle 
-    { article_title :: T.Text
-    , article_id :: ArticleId
-    , article_pubdate :: TPubdate
-    , article_tags :: [TTag]
-    , article_content :: T.Text
+    { title :: T.Text
+    , aid :: ArticleId
+    , pubdate :: TPubdate
+    , tags :: [TTag]
+    , content :: T.Text
     } deriving (Data, Typeable)
 
 data TPubdate = TPubdate
-    { article_date :: T.Text
-    , article_year :: T.Text
-    , article_month :: T.Text
-    , article_day :: T.Text
+    { date :: T.Text
+    , year :: T.Text
+    , month :: T.Text
+    , day :: T.Text
     } deriving (Data, Typeable)
 data TTag = TTag
-    { article_tag :: T.Text
-    , article_encoded_tag :: T.Text
+    { tag :: T.Text
+    , encoded_tag :: T.Text
     } deriving (Data, Typeable)
 
 article2tArticle :: Article -> TArticle
 article2tArticle article = 
     TArticle
-    { article_title = articleTitle article
-    , article_id    = articleIdNum article
-    , article_pubdate = pd
-    , article_tags    = ts
-    , article_content = articleContent article}
+    { title = articleTitle article
+    , aid    = articleIdNum article
+    , pubdate = pd
+    , tags    = ts
+    , content = articleContent article}
     where pd = let f s = T.pack . formatTime defaultTimeLocale s $ 
                          ModifiedJulianDay $ articlePubdate article
-               in TPubdate { article_date = f "%F"
-                           , article_year = f "%Y"
-                           , article_month = f "%b"
-                           , article_day   = f "%e" }
+               in TPubdate { date = f "%F"
+                           , year = f "%Y"
+                           , month = f "%b"
+                           , day   = f "%e" }
           ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
                articleTags article
 

@@ -3,6 +3,7 @@
 
 module Hooks.XmlSitemap (xmlSitemap) where
 
+import qualified Data.Map as M
 import           Data.Maybe (catMaybes)
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
@@ -28,7 +29,9 @@ xmlSitemap conf _ = do
 generateSitemapFile :: Configure -> [MaybeArticle] -> IO ()
 generateSitemapFile conf mas = 
     let doc = generateSitemap conf mas
-        path = htmlDirectory conf </> "sitemap.xml"
+        path = case "xml_sitemap_file" `M.lookup` optConfs conf of
+                 Just p  -> p
+                 Nothing -> htmlDirectory conf </> "sitemap.xml"
     in T.writeFile path $ renderXml doc
 
 generateSitemap :: Configure -> [MaybeArticle] -> XmlDocument

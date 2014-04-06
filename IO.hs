@@ -134,10 +134,9 @@ generateHtmlFileWithLog template conf article = do
 
 generateHtmlFile :: Text -> Configure -> Article -> IO ()
 generateHtmlFile template conf article = do
-  let dir = htmlDirectory conf
+  let dir = htmlDirectory conf </> "archives"
       name = (show $ articleIdNum article) ++ ".html"
       tempData = TemplateData conf $ article2tArticle article
-      
   res <- hastacheStr defaultConfig template $ mkGenericContext tempData
   TL.writeFile (dir </> name) res
 
@@ -222,7 +221,7 @@ gfmStr2html = let mdDef = def {readerExtensions = githubMarkdownExtensions}
               in writeHtml def . readMarkdown mdDef
 
 getHtmlFilePath :: Configure -> Article -> FilePath
-getHtmlFilePath conf article = htmlDirectory conf </> 
+getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
                                show (articleIdNum article) ++ ".html"
 
 pureTime :: UTCTime

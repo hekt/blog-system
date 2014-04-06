@@ -3,6 +3,7 @@
 
 module Hooks.AtomFeed (atomFeed) where
 
+import qualified Data.Map as M
 import           Data.Text (Text, pack, intercalate, append)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -26,9 +27,12 @@ atomFeed conf _ = do
     Right articles -> generateXmlFile conf $ map parseBSON articles
 
 generateXmlFile :: Configure -> [Article] -> IO ()
-generateXmlFile conf articles = let doc = generateXmlDoc conf articles
-                                    path = htmlDirectory conf </> "atom.xml"
-                                in T.writeFile path doc
+generateXmlFile conf articles = 
+    let doc = generateXmlDoc conf articles
+        path = case "atom_feed_file" `M.lookup` optConfs conf of
+                 Just p  -> p
+                 Nothing -> htmlDirectory conf </> "atom.xml"
+    in T.writeFile path doc
 
 generateXmlDoc :: Configure -> [Article] -> Text
 generateXmlDoc conf articles = renderXml $ XmlDocument "1.0" "UTF-8"
