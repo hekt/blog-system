@@ -84,7 +84,7 @@ data Configure = Configure
     , databaseName        :: T.Text
     , databaseHost        :: String
     , optConfs            :: M.Map String String
-    } deriving (Data, Typeable, Show)
+    } deriving (Show, Data, Typeable)
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
                            <$> v .: "title"
@@ -167,6 +167,9 @@ instance ToBSON Article where
                , "source_file"   =: articleSourceFile a
                , "last_modified" =: articleLastModified a
                , "imported"      =: articleIsImported a ]
+instance Minimal Article where
+    minimal = Article minimal minimal minimal minimal
+                         minimal minimal minimal minimal
 
 data TArticle = TArticle 
     { title :: T.Text
@@ -203,10 +206,6 @@ article2tArticle article =
                            , day   = f "%e" }
           ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
                articleTags article
-
-instance Minimal Article where
-    minimal = Article minimal minimal minimal minimal
-                         minimal minimal minimal minimal
 
 data MaybeArticle = MaybeArticle 
     { mArticleTitle :: Maybe T.Text
