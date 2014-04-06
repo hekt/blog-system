@@ -3,6 +3,7 @@
 
 module Hooks.RelatedPosts where
 
+import           Control.Exception
 import           Control.Monad
 import           Data.List (sort, sortBy)
 import           Data.Ord (comparing)
@@ -29,7 +30,9 @@ findByTags :: Configure -> Pipe -> [Text] -> IO [Document]
 findByTags conf pipe tags = do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select (buildSelectorByTags tags) "articles")
-  return $ either (\_ -> []) id e
+  case e of
+    Left  err  -> throwIO . userError $ show err
+    Right docs -> return docs
 
 calcRelated :: [(Text, Float)] -> [Text] -> [Document] -> [(ArticleId, Float)]
 calcRelated scores tags = calcScores scores tags . map doc2pair
@@ -40,7 +43,7 @@ getScoreList conf pipe = do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select [] "articles") { project = ["tags" =: 1] }
   case e of 
-    Left _   -> return []
+    Left  err  -> throwIO . userError $ show err
     Right docs -> return $ generateScoreList $ concatMap doc2tags docs
 
 buildSelectorByTags :: [Text] -> Document

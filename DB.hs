@@ -13,6 +13,7 @@ module DB
     , accessToBlog
     ) where
 
+import           Control.Exception
 import           Control.Monad
 import           Data.Time.Clock (UTCTime, getCurrentTime)
 import           Database.MongoDB
@@ -38,21 +39,25 @@ saveArticlesToDB conf articles = do
     let selector = ["id" =: articleIdNum article]
     access pipe master dbName $ 
            repsert (select selector "articles") $ toBSON article
-      
                         
 getLatestIdNumber :: Configure -> IO Int
 getLatestIdNumber conf = do
   e <- accessToBlog conf $ findOne (select [] "articles") 
        {sort = ["id" =: -1], project = ["id" =: 1]}
   case e of
+    Left  err      -> throwIO . userError $ show err
     Right (Just d) -> return $ "id" `at` d
-    _              -> return 0
+    Right Nothing  -> do
+           putLog WarnLog $ "Failed to get Latest ID Number. use 0"
+           return 0
 
 getKnownList :: Configure -> IO [FilePath]
 getKnownList conf = do
   e <- accessToBlog conf $ 
        rest =<< find (select [] "articles") {project = ["source_file" =: 1]}
-  return $ either (\_ -> []) (map ("source_file" `at`)) e
+  case e of
+    Left  err  -> throwIO . userError $ show err
+    Right docs -> return $ map ("source_file" `at`) docs
 
 getAllArticleSourceAndIds :: Configure -> IO [(FilePath, Int)]
 getAllArticleSourceAndIds conf = do
@@ -76,8 +81,11 @@ getLastRunTime conf = do
   e <- accessToBlog conf $ 
        findOne (select [] "last_run") {project = ["time" =: 1]}
   case e of
+    Left  err      -> throwIO . userError $ show err
     Right (Just d) -> return $ "time" `at` d
-    _              -> return pureTime
+    Right Nothing  -> do
+           putLog WarnLog "Failed to get Last run time. use 1858-11-17"
+           return minimal
 
 resetDB :: Configure -> IO ()
 resetDB conf = do
