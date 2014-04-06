@@ -190,8 +190,8 @@ data TTag = TTag
     , encoded_tag :: T.Text
     } deriving (Data, Typeable)
 
-article2tArticle :: Article -> TArticle
-article2tArticle article = 
+articleToTArticle :: Article -> TArticle
+articleToTArticle article = 
     TArticle
     { title = articleTitle article
     , aid    = articleIdNum article

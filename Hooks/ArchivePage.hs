@@ -43,7 +43,7 @@ generateArchiveFile template conf atcs = do
                    Just p  -> p
                    Nothing -> htmlDirectory conf </> "archive.html"
       tatcs = ArchivePageValues conf $
-              map (article2tArticle . mArticleToArticle) atcs
+              map (articleToTArticle . mArticleToArticle) atcs
   result <- hastacheStr defaultConfig template $ mkGenericContext tatcs
   TL.writeFile filePath result
   putLog InfoLog $ unwords ["ArchivePage: Successfully generated", filePath]

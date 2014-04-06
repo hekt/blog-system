@@ -136,7 +136,7 @@ generateHtmlFile :: Text -> Configure -> Article -> IO ()
 generateHtmlFile template conf article = do
   let dir = htmlDirectory conf </> "archives"
       name = (show $ articleIdNum article) ++ ".html"
-      tempData = TemplateData conf $ article2tArticle article
+      tempData = TemplateData conf $ articleToTArticle article
   res <- hastacheStr defaultConfig template $ mkGenericContext tempData
   TL.writeFile (dir </> name) res
 

@@ -50,7 +50,7 @@ generateTagArchive template conf tag atcs = do
               Nothing -> htmlDirectory conf </> "tags"
       name = (filenameEncode $ T.unpack tag) ++ ".html"
       tatcs = TagArchiveValues conf tag $ 
-              map (article2tArticle . mArticleToArticle) atcs
+              map (articleToTArticle . mArticleToArticle) atcs
   result   <- hastacheStr defaultConfig template $ mkGenericContext tatcs
   TL.writeFile (dir </> name) result
   putLog InfoLog $ unwords [ "TagArchive: Successfully generated"
