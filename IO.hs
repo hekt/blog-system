@@ -156,14 +156,23 @@ getUpdatedMdFiles lastRun dir = do
   filterM (isUpdated lastRun) files
 
 getMdFiles :: AbsPath -> IO [FilePath]
-getMdFiles dir = getDirectoryContents dir >>=
-                 return . map (dir </>) . filter isMarkdownFile >>=
-                 mapM (canonicalizePath)
+getMdFiles dir =
+    let f = map (dir </>) . filter (\x -> isVisibleFile x && isMarkdownFile x)
+    in fmap f (getDirectoryContents dir) >>= mapM canonicalizePath
 
 getHtmlFiles :: AbsPath -> IO [FilePath]
-getHtmlFiles dir = getDirectoryContents dir >>=
-                   return . map (dir </>) . filter isHtmlFile >>=
-                   mapM (canonicalizePath)
+getHtmlFiles dir = 
+    let f = map (dir </>) . filter (\x -> isVisibleFile x && isHtmlFile x)
+    in fmap f (getDirectoryContents dir) >>= mapM canonicalizePath
+
+isVisibleFile :: FilePath -> Bool
+isVisibleFile = not . isInvisibleFile
+
+isInvisibleFile :: FilePath -> Bool
+isInvisibleFile []   = False
+isInvisibleFile path = case takeFileName path of
+                         ('.':_) -> True
+                         _       -> False
 
 isMarkdownFile :: FilePath -> Bool
 isMarkdownFile file = takeExtension file `elem` markdownExtensions
@@ -181,6 +190,9 @@ getLastModified file =
 
 
 -- supplements
+
+filterAll :: [(a -> Bool)] -> [a] -> [a]
+filterAll fs xs = foldl (\acc f -> filter f acc) xs fs
 
 getLogTime :: IO String
 getLogTime = getCurrentTime >>= 
