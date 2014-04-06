@@ -9,10 +9,17 @@ import Hooks.AtomFeed
 import Hooks.XmlSitemap
 import Hooks.AmazonAssociates
 import Hooks.TagArchives
+import Hooks.ArchivePage
 
 beforeSaveHooks :: [Configure -> [Article] -> IO [Article]]
-beforeSaveHooks = [amazonAssociates]
+beforeSaveHooks = [ amazonAssociates
+                  ]
 
 afterSaveHooks :: [Configure -> [Article] -> IO ()]
-afterSaveHooks = [relatedPosts, atomFeed, xmlSitemap, tagArchives]
+afterSaveHooks = [ relatedPosts
+                 , atomFeed
+                 , xmlSitemap
+                 , tagArchives
+                 , archivePage
+                 ]
 
