@@ -231,8 +231,8 @@ articleToTArticle article =
                            , year = f "%Y"
                            , month = f "%b"
                            , day   = f "%-e" }
-          ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
-               articleTags article
+          f t = TTag t . T.pack . urlEncode . filenameEncode $ T.unpack t
+          ts = map f $ articleTags article
 
 mArticleToArticle :: MaybeArticle -> Article
 mArticleToArticle ma = Article
@@ -248,3 +248,7 @@ mArticleToArticle ma = Article
 
 mArticleToTArticle :: MaybeArticle -> TArticle
 mArticleToTArticle = articleToTArticle . mArticleToArticle
+
+filenameEncode :: String -> String
+filenameEncode str = map f str
+    where f c = if c `elem` ['/', '\0'] then '-' else c

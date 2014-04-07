@@ -69,10 +69,6 @@ getDocsByTag conf pipe tag =
              , project = [ "title" =: 1, "id" =: 1
                          , "tags" =: 1, "pubdate" =: 1 ] }
 
-filenameEncode :: String -> String
-filenameEncode str = map f str
-    where f c = if c `elem` ['/', '\0'] then '-' else c
-
 
 -- http://stackoverflow.com/questions/3098391/unique-elements-in-a-haskell-list/3100764#3100764
 nubOrd :: Ord a => [a] -> [a] 
