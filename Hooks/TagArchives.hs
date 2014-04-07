@@ -4,6 +4,7 @@
 
 module Hooks.TagArchives (tagArchives) where
 
+import           Control.Exception
 import           Control.Monad
 import           Data.Data (Data, Typeable)
 import qualified Data.Map as M
@@ -26,8 +27,13 @@ data TagArchiveValues = TagArchiveValues
     , articles :: [TArticle]
     } deriving (Data, Typeable)
 
+putLog' level = putLog level . (++) "TagArchives: "
+
+handler :: IOException -> IO ()
+handler e = putLog' ErrorLog $ show e
+
 tagArchives :: Configure -> [Article] -> IO ()
-tagArchives conf articles = do
+tagArchives conf articles = handle handler $ do
   let tags = getTagsFromArticles articles
       tempPath = maybe (articleTemplateFile conf) id $ 
                  "tag_archives_template_file" `M.lookup` optConfs conf
@@ -36,7 +42,7 @@ tagArchives conf articles = do
   forM_ tags $ \tag -> do
     e <- getDocsByTag conf pipe tag
     case e of
-      Left  msg  -> putLog ErrorLog $ "TagArchives: " ++ show msg
+      Left  msg  -> putLog' ErrorLog msg
       Right docs -> generateTagArchive template conf tag $ map parseBSON docs
   close pipe
 
@@ -56,9 +62,9 @@ generateTagArchive template conf tag atcs = do
   putLog InfoLog $ unwords [ "TagArchive: Successfully generated"
                            , dir </> name ]
 
-getDocsByTag :: Configure -> Pipe -> Text -> IO (Either Failure [Document])
+getDocsByTag :: Configure -> Pipe -> Text -> IO (Either String [Document])
 getDocsByTag conf pipe tag = 
-    access pipe master (databaseName conf) $ rest =<<
+    access' pipe master (databaseName conf) $ rest =<<
     find (select ["tags" =: tag] "articles")
              { sort = ["pubdate" =: -1] 
              , project = [ "title" =: 1, "id" =: 1
