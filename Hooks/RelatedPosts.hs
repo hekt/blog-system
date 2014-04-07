@@ -16,6 +16,7 @@ import IO
 import DB
 
 ioeLogger' = ioeLoggerWithLabel "RelatedPosts: "
+putLog' level = putLog level . (++) "RelatedPosts: "
 
 relatedPosts :: Configure -> [Article] -> IO ()
 relatedPosts conf articles = ioeLogger' . runErrorT $ do
@@ -27,7 +28,7 @@ relatedPosts conf articles = ioeLogger' . runErrorT $ do
     return $ (aid, take' 6 aid $ calcRelated scores tags docs)
   liftIO $ do
     saveToDB conf pipe result
-    putLog InfoLog $ "RelatedPosts: Successfully updated"
+    putLog' InfoLog $ "Successfully updated"
 
 take' :: Int -> ArticleId -> [(ArticleId, Float)] -> [ArticleId]
 take' n aid = take n . filter (/= aid) . 
