@@ -203,7 +203,7 @@ articleToTArticle article =
                in TPubdate { date = f "%F"
                            , year = f "%Y"
                            , month = f "%b"
-                           , day   = f "%e" }
+                           , day   = f "%-e" }
           ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
                articleTags article
 
