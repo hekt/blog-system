@@ -191,23 +191,6 @@ data TTag = TTag
     , encoded_tag :: T.Text
     } deriving (Data, Typeable)
 
-articleToTArticle :: Article -> TArticle
-articleToTArticle article = 
-    TArticle
-    { title = articleTitle article
-    , aid    = articleIdNum article
-    , pubdate = pd
-    , tags    = ts
-    , content = articleContent article}
-    where pd = let f s = T.pack . formatTime defaultTimeLocale s $ 
-                         ModifiedJulianDay $ articlePubdate article
-               in TPubdate { date = f "%F"
-                           , year = f "%Y"
-                           , month = f "%b"
-                           , day   = f "%-e" }
-          ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
-               articleTags article
-
 data MaybeArticle = MaybeArticle 
     { mArticleTitle :: Maybe T.Text
     , mArticleIdNum :: Maybe Int
@@ -234,6 +217,23 @@ instance Minimal MaybeArticle where
     minimal = MaybeArticle minimal minimal minimal minimal
                               minimal minimal minimal minimal
 
+articleToTArticle :: Article -> TArticle
+articleToTArticle article = 
+    TArticle
+    { title = articleTitle article
+    , aid    = articleIdNum article
+    , pubdate = pd
+    , tags    = ts
+    , content = articleContent article}
+    where pd = let f s = T.pack . formatTime defaultTimeLocale s $ 
+                         ModifiedJulianDay $ articlePubdate article
+               in TPubdate { date = f "%F"
+                           , year = f "%Y"
+                           , month = f "%b"
+                           , day   = f "%-e" }
+          ts = map (\t -> TTag t (T.pack . urlEncode $ T.unpack t)) $
+               articleTags article
+
 mArticleToArticle :: MaybeArticle -> Article
 mArticleToArticle ma = Article
                        { articleTitle = f mArticleTitle
@@ -245,3 +245,6 @@ mArticleToArticle ma = Article
                        , articleLastModified = f mArticleLastModified
                        , articleIsImported   = f mArticleIsImported }
     where f g = maybe minimal id $ g ma
+
+mArticleToTArticle :: MaybeArticle -> TArticle
+mArticleToTArticle = articleToTArticle . mArticleToArticle
