@@ -25,6 +25,7 @@ relatedPosts conf articles =
         docs <- findByTags conf pipe tags
         return $ (aid, take' 6 aid $ calcRelated scores tags docs)
       liftIO $ saveToDB conf pipe result
+      putLog InfoLog $ "RelatedPosts: Successfully updated"
 
 take' :: Int -> ArticleId -> [(ArticleId, Float)] -> [ArticleId]
 take' n aid = take n . filter (/= aid) . 
