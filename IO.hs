@@ -3,6 +3,7 @@
 module IO
     -- logging
     ( ioeLogger
+    , ioeLoggerWithLabel
     , putLog
     -- read file
     , getConf
@@ -58,14 +59,24 @@ import Model
 -- logging
 
 ioeLogger :: IO (Either String ()) -> IO ()
-ioeLogger act = handle ioeLogger' $ do
+ioeLogger act = handle ioeHandler $ do
   result <- act
   case result of
     Left msg -> putLog ErrorLog msg
     _        -> return ()
 
-ioeLogger' :: IOException -> IO ()
-ioeLogger' = putLog ErrorLog . show
+ioeHandler :: IOException -> IO ()
+ioeHandler = putLog ErrorLog . show
+
+ioeLoggerWithLabel :: String -> IO (Either String ()) -> IO ()
+ioeLoggerWithLabel label act = handle (ioeHandlerWithLabel label) $ do
+  result <- act
+  case result of 
+    Left msg -> putLog ErrorLog $ label ++ msg
+    _        -> return ()
+
+ioeHandlerWithLabel :: String -> IOException -> IO ()
+ioeHandlerWithLabel label e = putLog ErrorLog $ label ++ show e
 
 putLog :: LogLevel -> String -> IO ()
 putLog level msg = do
