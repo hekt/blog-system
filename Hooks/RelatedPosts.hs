@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 
-module Hooks.RelatedPosts where
+module Hooks.RelatedPosts (relatedPosts) where
 
 import           Control.Exception
 import           Control.Monad
@@ -15,17 +15,19 @@ import Model
 import IO
 import DB
 
+ioeLogger' = ioeLoggerWithLabel "RelatedPosts: "
+
 relatedPosts :: Configure -> [Article] -> IO ()
-relatedPosts conf articles = 
-    ioeLoggerWithLabel "RelatedPosts: " . runErrorT $ do
-      let pairs = map article2pair articles
-      pipe   <- liftIO . runIOE $ connect (host $ databaseHost conf)
-      scores <- getScoreList conf pipe
-      result <- forM pairs $ \(aid, tags) -> do
-        docs <- findByTags conf pipe tags
-        return $ (aid, take' 6 aid $ calcRelated scores tags docs)
-      liftIO $ saveToDB conf pipe result
-      putLog InfoLog $ "RelatedPosts: Successfully updated"
+relatedPosts conf articles = ioeLogger' . runErrorT $ do
+  let pairs = map article2pair articles
+  pipe   <- liftIO . runIOE $ connect (host $ databaseHost conf)
+  scores <- getScoreList conf pipe
+  result <- forM pairs $ \(aid, tags) -> do
+    docs <- findByTags conf pipe tags
+    return $ (aid, take' 6 aid $ calcRelated scores tags docs)
+  liftIO $ do
+    saveToDB conf pipe result
+    putLog InfoLog $ "RelatedPosts: Successfully updated"
 
 take' :: Int -> ArticleId -> [(ArticleId, Float)] -> [ArticleId]
 take' n aid = take n . filter (/= aid) . 
