@@ -5,47 +5,46 @@ module Hooks.RelatedPosts where
 
 import           Control.Exception
 import           Control.Monad
+import           Control.Monad.Error
 import           Data.List (sort, sortBy)
 import           Data.Ord (comparing)
 import           Data.Text (Text)
 import           Database.MongoDB hiding (sort, lookup, count)
 
 import Model
+import IO
 import DB
 
 relatedPosts :: Configure -> [Article] -> IO ()
-relatedPosts conf articles = do
-  let pairs = map article2pair articles
-  pipe   <- runIOE $ connect (host $ databaseHost conf)
-  scores <- getScoreList conf pipe
-  result <- forM pairs $ \(aid, tags) -> do
-    docs <- findByTags conf pipe tags
-    return $ (aid, take' 6 aid $ calcRelated scores tags docs)
-  saveToDB conf pipe result
+relatedPosts conf articles = 
+    ioeLoggerWithLabel "RelatedPosts: " . runErrorT $ do
+      let pairs = map article2pair articles
+      pipe   <- liftIO . runIOE $ connect (host $ databaseHost conf)
+      scores <- getScoreList conf pipe
+      result <- forM pairs $ \(aid, tags) -> do
+        docs <- findByTags conf pipe tags
+        return $ (aid, take' 6 aid $ calcRelated scores tags docs)
+      liftIO $ saveToDB conf pipe result
 
 take' :: Int -> ArticleId -> [(ArticleId, Float)] -> [ArticleId]
 take' n aid = take n . filter (/= aid) . 
               map fst . reverse . sortBy (comparing snd)
 
-findByTags :: Configure -> Pipe -> [Text] -> IO [Document]
-findByTags conf pipe tags = do
+findByTags :: Configure -> Pipe -> [Text] -> StrIOE [Document]
+findByTags conf pipe tags = ErrorT $ do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select (buildSelectorByTags tags) "articles")
-  case e of
-    Left  err  -> throwIO $ failureToIOE err
-    Right docs -> return docs
+  return $ strError e
 
 calcRelated :: [(Text, Float)] -> [Text] -> [Document] -> [(ArticleId, Float)]
 calcRelated scores tags = calcScores scores tags . map doc2pair
 
 -- io
-getScoreList :: Configure -> Pipe -> IO [(Text, Float)]
-getScoreList conf pipe = do
+getScoreList :: Configure -> Pipe -> StrIOE [(Text, Float)]
+getScoreList conf pipe = ErrorT $ do
   e <- access pipe master (databaseName conf) $
-       rest =<< find (select [] "articles") { project = ["tags" =: 1] }
-  case e of 
-    Left  err  -> throwIO $ failureToIOE err
-    Right docs -> return $ generateScoreList $ concatMap doc2tags docs
+       rest =<< find (select [] "articles") {project = ["tags" =: 1]}
+  return $ strError $ fmap (generateScoreList . concatMap doc2tags) e
 
 buildSelectorByTags :: [Text] -> Document
 buildSelectorByTags tags = ["$or" =: map (\t -> ["tags" =: t]) tags]

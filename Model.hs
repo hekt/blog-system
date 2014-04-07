@@ -62,6 +62,7 @@ type ArticleId = Int
 type PathWithId = (FilePath, ArticleId)
 type AbsPath = FilePath
 type MJDay = Integer
+type StrIOE = ErrorT String IO
 
 
 data LogLevel = DebugLog | InfoLog | WarnLog | ErrorLog deriving (Eq, Ord)

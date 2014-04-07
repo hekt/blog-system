@@ -19,6 +19,7 @@ module IO
     , pureTime
     --- utils
     , safeRead
+    , strError
     ) where
 
 import           Control.Exception
@@ -200,6 +201,10 @@ getLastModified file =
 
 
 -- supplements
+
+strError :: Show a => Either a b -> Either String b
+strError (Left err) = Left $ show err
+strError (Right r)  = Right r
 
 filterAll :: [(a -> Bool)] -> [a] -> [a]
 filterAll fs xs = foldl (\acc f -> filter f acc) xs fs
