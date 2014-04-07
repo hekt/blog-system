@@ -3,6 +3,7 @@
 
 module Hooks.AtomFeed (atomFeed) where
 
+import           Control.Monad.Error
 import qualified Data.Map as M
 import           Data.Text (Text, pack, intercalate, append)
 import qualified Data.Text as T
@@ -18,26 +19,22 @@ import IO
 import DB
 import XML
 
+ioeLogger' = ioeLoggerWithLabel "AtomFeed: "
+putLog' level = putLog level . (++) "AtomFeed: "
 
 atomFeed :: Configure -> [Article] -> IO ()
-atomFeed conf _ = do
-  e <- accessToBlog conf $ rest =<< find (select [] "articles") 
-                {limit = 10, sort = ["pubdate" =: -1]}
-  case e of 
-    Left  msg  -> putLog ErrorLog $ "AtomFeed: " ++ show msg
-    Right docs -> do generateXmlFile conf $ map parseBSON docs
+atomFeed conf _ = ioeLogger' . runErrorT $ do
+  docs <- ErrorT . accessToBlog' conf $ rest =<< 
+          find (select [] "articles") {limit = 10, sort = ["pubdate" =: -1]}
+  let str = generateXml conf $ map parseBSON docs
+      path = maybe (htmlDirectory conf </> "atom.xml") id $
+             "atom_feed_file" `M.lookup` optConfs conf
+  liftIO $ do
+    T.writeFile path str
+    putLog' InfoLog $ unwords ["Successfully generated", path]
 
-generateXmlFile :: Configure -> [Article] -> IO ()
-generateXmlFile conf articles = 
-    let doc = generateXmlDoc conf articles
-        path = case "atom_feed_file" `M.lookup` optConfs conf of
-                 Just p  -> p
-                 Nothing -> htmlDirectory conf </> "atom.xml"
-    in do T.writeFile path doc
-          putLog InfoLog $ unwords ["AtomFeed: Successfully generated", path]
-
-generateXmlDoc :: Configure -> [Article] -> Text
-generateXmlDoc conf articles = renderXml $ XmlDocument "1.0" "UTF-8"
+generateXml :: Configure -> [Article] -> Text
+generateXml conf articles = renderXml $ XmlDocument "1.0" "UTF-8"
                                [generateFeedElement conf articles]
 
 generateFeedElement :: Configure -> [Article] -> XmlElement

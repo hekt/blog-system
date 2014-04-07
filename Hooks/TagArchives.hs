@@ -29,9 +29,8 @@ data TagArchiveValues = TagArchiveValues
 tagArchives :: Configure -> [Article] -> IO ()
 tagArchives conf articles = do
   let tags = getTagsFromArticles articles
-      tempPath = case "tag_archives_template_file" `M.lookup` optConfs conf of
-                   Just p  -> p
-                   Nothing -> articleTemplateFile conf
+      tempPath = maybe (articleTemplateFile conf) id $ 
+                 "tag_archives_template_file" `M.lookup` optConfs conf
   pipe     <- runIOE $ connect (host $ databaseHost conf)
   template <- decodeTemplateFile tempPath
   forM_ tags $ \tag -> do
@@ -39,6 +38,7 @@ tagArchives conf articles = do
     case e of
       Left  msg  -> putLog ErrorLog $ "TagArchives: " ++ show msg
       Right docs -> generateTagArchive template conf tag $ map parseBSON docs
+  close pipe
 
 getTagsFromArticles :: [Article] -> [Text]
 getTagsFromArticles = nubOrd . concatMap articleTags

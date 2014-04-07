@@ -3,6 +3,7 @@
 
 module Hooks.XmlSitemap (xmlSitemap) where
 
+import           Control.Monad.Error
 import qualified Data.Map as M
 import           Data.Maybe (catMaybes)
 import           Data.Text (Text, pack)
@@ -17,24 +18,20 @@ import IO
 import DB
 import XML
 
+ioeLogger' = ioeLoggerWithLabel "XmlSitemap: "
+putLog' level = putLog level . (++) "XmlSitemap: "
 
 xmlSitemap :: Configure -> [Article] -> IO ()
-xmlSitemap conf _ = do
-  e <- accessToBlog conf $ rest =<< find (select [] "articles")
-       { project = ["id" =: 1, "last_modified" =: 1] }
-  case e of
-    Left  msg  -> putLog ErrorLog $ "XmlSitemap: " ++ show msg
-    Right docs -> generateSitemapFile conf $ map parseBSON docs
-
-generateSitemapFile :: Configure -> [MaybeArticle] -> IO ()
-generateSitemapFile conf mas = 
-    let doc = generateSitemap conf mas
-        path = case "xml_sitemap_file" `M.lookup` optConfs conf of
-                 Just p  -> p
-                 Nothing -> htmlDirectory conf </> "sitemap.xml"
-    in do T.writeFile path $ renderXml doc
-          putLog InfoLog $ unwords [ "XmlSitemap: Successfully generated"
-                                   , path ]
+xmlSitemap conf _ = ioeLogger' . runErrorT $ do
+  docs <- ErrorT $ accessToBlog' conf $ 
+          rest =<< find (select [] "articles")
+          { project = ["id" =: 1, "last_modified" =: 1] }
+  let xml = generateSitemap conf $ map parseBSON docs
+      path = maybe (htmlDirectory conf </> "sitemap.xml") id $
+             "xml_sitemap_file" `M.lookup` optConfs conf
+  liftIO $ do
+    T.writeFile path $ renderXml xml
+    putLog' InfoLog $ unwords ["Successfully generated", path]
 
 generateSitemap :: Configure -> [MaybeArticle] -> XmlDocument
 generateSitemap conf mas = XmlDocument "1.0" "UTF-8" $

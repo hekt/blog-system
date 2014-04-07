@@ -4,9 +4,11 @@
 
 module Hooks.ArchivePage (archivePage) where
 
+import           Control.Monad.Error
 import           Data.Data (Data, Typeable)
 import qualified Data.Map as M
 import           Data.Text (Text)
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.IO as TL
 import           Database.MongoDB
 import           Text.Hastache
@@ -22,28 +24,26 @@ data ArchivePageValues = ArchivePageValues
     , articles    :: [TArticle]
     } deriving (Data, Typeable)
 
-archivePage :: Configure -> [Article] -> IO ()
-archivePage conf _ = do
-  let tempPath = case "archive_template_file" `M.lookup` optConfs conf of
-                   Just p  -> p
-                   Nothing -> articleTemplateFile conf
-  template <- decodeTemplateFile tempPath
-  result   <- accessToBlog conf $ rest =<< find (select [] "articles") 
-               { sort = ["pubdate" =: -1]
-               , project = [ "title" =: 1, "id" =: 1
-                           , "tags" =: 1, "pubdate" =: 1 ] }
-  case result of
-    Left msg   -> putLog ErrorLog $ "ArchivePage: " ++ show msg
-    Right docs -> generateArchiveFile template conf $ map parseBSON docs
-    
+ioeLogger' = ioeLoggerWithLabel "ArchivePage: "
+putLog' level = putLog level . (++) "ArchivePage: "
 
-generateArchiveFile :: Text -> Configure -> [MaybeArticle] -> IO ()
-generateArchiveFile template conf atcs = do
-  let filePath = case "archive_page_file" `M.lookup` optConfs conf of
-                   Just p  -> p
-                   Nothing -> htmlDirectory conf </> "archive.html"
-      tatcs = ArchivePageValues conf $
-              map (articleToTArticle . mArticleToArticle) atcs
-  result <- hastacheStr defaultConfig template $ mkGenericContext tatcs
-  TL.writeFile filePath result
-  putLog InfoLog $ unwords ["ArchivePage: Successfully generated", filePath]
+archivePage :: Configure -> [Article] -> IO ()
+archivePage conf _ = ioeLogger' . runErrorT $ do
+  let tempPath = maybe (articleTemplateFile conf) id $
+                 "archive_template_file" `M.lookup` optConfs conf
+      savePath = maybe (htmlDirectory conf </> "archive.html") id $
+                 "archive_page_file" `M.lookup` optConfs conf
+      pjs = ["title" =: 1, "id" =: 1, "tags" =: 1, "pubdate" =: 1]
+  template <- liftIO $ decodeTemplateFile tempPath
+  docs     <- ErrorT $ accessToBlog' conf $
+              rest =<< find (select [] "articles") 
+              {sort = ["pubdate" =: -1], project = pjs}
+  body     <- liftIO $ generateArchive conf template $ map parseBSON docs
+  liftIO $ do
+    TL.writeFile savePath body
+    putLog' InfoLog $ unwords ["Successfully generated", savePath]
+    
+generateArchive :: Configure -> Text -> [MaybeArticle] -> IO TL.Text
+generateArchive conf template atcs =
+  hastacheStr defaultConfig template . mkGenericContext $
+  ArchivePageValues conf $ map mArticleToTArticle atcs
