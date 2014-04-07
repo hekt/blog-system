@@ -10,12 +10,15 @@ module DB
     , updateLastRunTime
     , getLastRunTime
     , resetDB
+    , access'
     , accessToBlog
+    , accessToBlog'
     , failureToIOE
     ) where
 
 import           Control.Exception
 import           Control.Monad
+import           Control.Monad.IO.Class (MonadIO)
 import           Data.Time.Clock (UTCTime, getCurrentTime)
 import           Database.MongoDB
 
@@ -30,6 +33,19 @@ accessToBlog conf act = do
   e    <- access pipe master dbName act
   close pipe
   return e
+
+accessToBlog' :: Configure -> Action IO a -> IO (Either String a)
+accessToBlog' conf act = do
+  let dbName = databaseName conf
+      dbHost = databaseHost conf
+  pipe <- runIOE $ connect (host dbHost)
+  e    <- access' pipe master dbName act
+  close pipe
+  return e
+
+access' :: (MonadIO m, Functor m) => Pipe -> AccessMode -> Database 
+        -> Action m a -> m (Either String a)
+access' p m d a = fmap strError $ access p m d a
 
 saveArticlesToDB :: Configure -> [Article] -> IO ()
 saveArticlesToDB conf articles = do
