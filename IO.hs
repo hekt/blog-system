@@ -7,6 +7,7 @@ module IO
     , putLog
     -- read file
     , getConf
+    , getConfWithPath
     , getArticleFromFile
     , decodeTemplateFile
     -- generate file
@@ -15,9 +16,11 @@ module IO
     , removeHtmlFiles
     -- directory
     , getUpdatedMdFiles
-    --- time
+    -- time
     , pureTime
-    --- utils
+    -- args
+    , parseArgs
+    -- utils
     , safeRead
     , strError
     ) where
@@ -57,6 +60,24 @@ import Setting
 import Model
 
 
+-- parse command args
+
+parseArgs :: [String] -> [(String, [String])]
+parseArgs args = f args [("no label", [])] where
+    f []     kvs            = kvs
+    f (x:xs) ys@((k,vs):kvs)
+        | isLavel x = f xs ((stripHyphen x, []  ) : ys)
+        | otherwise = f xs ((k            , x:vs) : kvs)
+
+isLavel :: String -> Bool
+isLavel ('-':_) = True
+isLavel _       = False
+
+stripHyphen :: String -> String
+stripHyphen ('-':s) = stripHyphen s
+stripHyphen s       = s
+
+
 -- logging
 
 ioeLogger :: IO (Either String ()) -> IO ()
@@ -91,6 +112,9 @@ putLog level msg = do
 getConf :: IO (Either String Configure)
 getConf = getAppUserDataDirectory appDirName 
           >>= return . (</> confFileName) >>= decodeYamlFile
+
+getConfWithPath :: FilePath -> IO (Either String Configure)
+getConfWithPath path = decodeYamlFile path
 
 getArticleFromFile :: AbsPath -> ArticleId -> IO (Either String Article)
 getArticleFromFile file aid = do

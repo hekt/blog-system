@@ -25,10 +25,8 @@ import Hook
 
 -- update
 
-runUpdate :: [String] -> IO ()
-runUpdate args = ioeLogger . runErrorT $ do
-  let (dir:_) = args
-  conf       <- ErrorT $ getConf
+runUpdate :: Configure -> FilePath -> ErrorT String IO ()
+runUpdate conf dir = do
   lastRun    <- liftIO $ getLastRunTime conf
   files      <- liftIO $ getUpdatedMdFiles lastRun dir
   liftIO $ putLog InfoLog $ unwords [ "Found", show $ length files
@@ -47,16 +45,14 @@ addIdToFiles pairs files = fst . runState (mapM addId files)
 
 -- rebuild
 
-runRebuild :: [String] -> IO ()
-runRebuild args = ioeLogger . runErrorT $ do
-  conf <- ErrorT getConf
+runRebuild :: Configure -> ErrorT String IO ()
+runRebuild conf = do
   liftIO $ removeHtmlFiles conf
   ErrorT $ runWithDB conf
   liftIO $ updateLastRunTime conf
 
-runForceRebuild :: [String] -> IO ()
-runForceRebuild args = ioeLogger . runErrorT $ do
-  conf   <- ErrorT getConf
+runForceRebuild :: Configure -> ErrorT String IO ()
+runForceRebuild conf = do
   liftIO $ removeHtmlFiles conf
   pairs  <- liftIO $ getAllArticleSourceAndIds conf
   liftIO $ resetDB conf
