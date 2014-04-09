@@ -16,6 +16,7 @@ module IO
     , removeHtmlFiles
     -- directory
     , getUpdatedMdFiles
+    , expandTilde
     -- time
     , pureTime
     -- args
@@ -184,6 +185,10 @@ removeHtmlFiles conf = getHtmlFiles (htmlDirectory conf) >>= mapM_ removeFile
   
 
 -- file info
+
+expandTilde :: FilePath -> IO FilePath
+expandTilde ('~':path) = getHomeDirectory >>= return . (</> path)
+expandTilde path       = return path
 
 getUpdatedMdFiles :: UTCTime -> AbsPath -> IO [FilePath]
 getUpdatedMdFiles lastRun dir = do

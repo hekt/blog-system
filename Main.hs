@@ -3,16 +3,17 @@
 import           Control.Monad.Error
 import           System.Environment (getArgs)
 
-import Model (Configure)
-import IO (parseArgs, getConfWithPath, ioeLogger)
+import Model
+import IO
 import Task (runUpdate, runRebuild, runForceRebuild)
 
 main :: IO ()
 main = ioeLogger . runErrorT $ do
-  args <- liftIO $ fmap parseArgs getArgs
-  path <- ErrorT . return $ lookupValue "conf" args
-  conf <- ErrorT $ getConfWithPath path
-  mode <- ErrorT . return $ lookupValue "no label" args
+  args  <- liftIO $ fmap parseArgs getArgs
+  path  <- ErrorT . return $ lookupValue "conf" args
+  path' <- liftIO $ expandTilde path
+  conf  <- ErrorT $ getConfWithPath path'
+  mode  <- ErrorT . return $ lookupValue "no label" args
   
   case mode of
     "update"  -> runUpdate' conf args

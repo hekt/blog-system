@@ -28,7 +28,8 @@ import Hook
 runUpdate :: Configure -> FilePath -> ErrorT String IO ()
 runUpdate conf dir = do
   lastRun    <- liftIO $ getLastRunTime conf
-  files      <- liftIO $ getUpdatedMdFiles lastRun dir
+  dir'       <- liftIO $ expandTilde dir
+  files      <- liftIO $ getUpdatedMdFiles lastRun dir'
   liftIO $ putLog InfoLog $ unwords [ "Found", show $ length files
                                     , "new/updated file(s)" ]
   knownFiles <- liftIO $ getAllArticleSourceAndIds conf
