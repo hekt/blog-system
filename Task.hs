@@ -95,4 +95,5 @@ doBeforeSaveHooks conf articles =
     foldM (\a h -> h conf a) articles beforeSaveHooks
 
 doAfterSaveHooks :: Configure -> [Article] -> IO ()
+doAfterSaveHooks _    []       = return ()
 doAfterSaveHooks conf articles = mapM_ (\h -> h conf articles) afterSaveHooks
