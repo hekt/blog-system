@@ -21,9 +21,10 @@ main = ioeLogger . runErrorT $ do
     _         -> ErrorT . return $ Left "invalid arguments"
 
 lookupValue :: String -> [(String, [String])] -> Either String String
-lookupValue k args = case k `lookup` args of
-                       Just (v:_)  -> Right v
-                       _           -> Left "invalid arguments"
+lookupValue k args = 
+    case k `lookup` args of
+      Just (v:_)  -> Right v
+      _           -> Left $ concat ["argument '", k, "' is missing or invalid"]
 
 runUpdate' :: Configure -> [(String, [String])] -> ErrorT String IO ()
 runUpdate' conf args = do
