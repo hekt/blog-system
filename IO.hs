@@ -59,7 +59,7 @@ import           System.Posix.Files
 import Model
 
 
--- definition
+-- PURE
 
 markdownExtensions :: [String]
 markdownExtensions = [ ".markdown", ".mdown", ".mkdn", ".md", ".mkd", ".mdwn"
@@ -68,26 +68,71 @@ markdownExtensions = [ ".markdown", ".mdown", ".mkdn", ".md", ".mkd", ".mdwn"
 htmlExtensions :: [String]
 htmlExtensions = [ ".html", ".htm" ]
 
-
--- parse command args
-
 parseArgs :: [String] -> [(String, [String])]
 parseArgs args = f args [("no label", [])] where
     f []     kvs            = kvs
     f (x:xs) ys@((k,vs):kvs)
-        | isLavel x = f xs ((stripHyphen x, []  ) : ys)
+        | isLabel x = f xs ((stripHyphen x, []  ) : ys)
         | otherwise = f xs ((k            , x:vs) : kvs)
 
-isLavel :: String -> Bool
-isLavel ('-':_) = True
-isLavel _       = False
+isLabel :: String -> Bool
+isLabel ('-':_) = True
+isLabel _       = False
 
 stripHyphen :: String -> String
 stripHyphen ('-':s) = stripHyphen s
 stripHyphen s       = s
 
+isInvisibleFile :: FilePath -> Bool
+isInvisibleFile []   = False
+isInvisibleFile path = case takeFileName path of
+                         ('.':_) -> True
+                         _       -> False
+isVisibleFile :: FilePath -> Bool
+isVisibleFile = not . isInvisibleFile
 
--- logging
+isMarkdownFile :: FilePath -> Bool
+isMarkdownFile file = takeExtension file `elem` markdownExtensions
+
+isHtmlFile :: FilePath -> Bool
+isHtmlFile file = takeExtension file `elem` htmlExtensions 
+
+strError :: Show a => Either a b -> Either String b
+strError (Left err) = Left $ show err
+strError (Right r)  = Right r
+
+safeRead :: Read a => String -> Maybe a
+safeRead = fmap fst . listToMaybe . reads
+
+csv2texts :: Text -> [Text]
+csv2texts = map strip . splitOn ","
+
+getDayFromText :: Text -> Either String MJDay
+getDayFromText = let l = Left "cannot parse pubdate"
+                     r = Right . toModifiedJulianDay
+                 in maybe l r . safeRead . unpack
+
+splitYamlAndGfm :: B.ByteString -> Either String (B.ByteString, B.ByteString)
+splitYamlAndGfm body = 
+    let reStr = "---\n+(.*)\n+---\n+(.*)" :: B.ByteString
+        regex = makeRegexOpts compExtended defaultExecOpt reStr
+    in case match regex body of 
+         ((_:y:g:_):_) -> Right (y, g)
+         _             -> Left "yaml and gfm parse error"
+
+gfmStr2html :: String -> Html
+gfmStr2html = let mdDef = def {readerExtensions = githubMarkdownExtensions}
+              in writeHtml def . readMarkdown mdDef
+
+getHtmlFilePath :: Configure -> Article -> FilePath
+getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
+                               show (articleIdNum article) ++ ".html"
+
+pureTime :: UTCTime
+pureTime = UTCTime (ModifiedJulianDay 0) 0
+
+
+-- IO
 
 ioeLogger :: IO (Either String ()) -> IO ()
 ioeLogger act = handle ioeHandler $ do
@@ -115,8 +160,6 @@ putLog level msg = do
   let log = unwords [time, show level, msg]
   putStrLn log
   when (level >= ErrorLog) $ hPutStrLn stderr log
-
--- read file
 
 getConf :: FilePath -> IO (Either String Configure)
 getConf path = decodeYamlFile path
@@ -162,9 +205,6 @@ decodeYamlAndGfmFile file = runErrorT $ do
 decodeTemplateFile :: FilePath -> IO Text
 decodeTemplateFile file = readFile file >>= return . encodeStr
 
-
--- generate file
-
 generateHtmlFileWithLog :: Text -> Configure -> Article -> IO ()
 generateHtmlFileWithLog template conf article = do
   generateHtmlFile template conf article
@@ -181,14 +221,8 @@ generateHtmlFile template conf article = do
   res <- hastacheStr defaultConfig template $ mkGenericContext tempData
   TL.writeFile (dir </> name) res
 
-
--- remove file
-
 removeHtmlFiles :: Configure -> IO ()
 removeHtmlFiles conf = getHtmlFiles (htmlDirectory conf) >>= mapM_ removeFile
-  
-
--- file info
 
 expandTilde :: FilePath -> IO FilePath
 expandTilde ('~':path) = getHomeDirectory >>= return . (</> path)
@@ -209,20 +243,6 @@ getHtmlFiles dir =
     let f = map (dir </>) . filter (\x -> isVisibleFile x && isHtmlFile x)
     in fmap f (getDirectoryContents dir) >>= mapM canonicalizePath
 
-isVisibleFile :: FilePath -> Bool
-isVisibleFile = not . isInvisibleFile
-
-isInvisibleFile :: FilePath -> Bool
-isInvisibleFile []   = False
-isInvisibleFile path = case takeFileName path of
-                         ('.':_) -> True
-                         _       -> False
-
-isMarkdownFile :: FilePath -> Bool
-isMarkdownFile file = takeExtension file `elem` markdownExtensions
-
-isHtmlFile :: FilePath -> Bool
-isHtmlFile file = takeExtension file `elem` htmlExtensions 
 
 isUpdated :: UTCTime -> FilePath -> IO Bool
 isUpdated time file = getLastModified file >>= return . (> time)
@@ -232,46 +252,7 @@ getLastModified file =
     getFileStatus file >>=
     return . posixSecondsToUTCTime . realToFrac . modificationTime
 
-
--- supplements
-
-strError :: Show a => Either a b -> Either String b
-strError (Left err) = Left $ show err
-strError (Right r)  = Right r
-
-filterAll :: [(a -> Bool)] -> [a] -> [a]
-filterAll fs xs = foldl (\acc f -> filter f acc) xs fs
-
 getLogTime :: IO String
 getLogTime = getCurrentTime >>= 
              return . formatTime defaultTimeLocale "[%F %X]"
 
-safeRead :: Read a => String -> Maybe a
-safeRead = fmap fst . listToMaybe . reads
-
-csv2texts :: Text -> [Text]
-csv2texts = map strip . splitOn ","
-
-getDayFromText :: Text -> Either String MJDay
-getDayFromText = let l = Left "cannot parse pubdate"
-                     r = Right . toModifiedJulianDay
-                 in maybe l r . safeRead . unpack
-
-splitYamlAndGfm :: B.ByteString -> Either String (B.ByteString, B.ByteString)
-splitYamlAndGfm body = 
-    let reStr = "---\n+(.*)\n+---\n+(.*)" :: B.ByteString
-        regex = makeRegexOpts compExtended defaultExecOpt reStr
-    in case match regex body of 
-         ((_:y:g:_):_) -> Right (y, g)
-         _             -> Left "yaml and gfm parse error"
-
-gfmStr2html :: String -> Html
-gfmStr2html = let mdDef = def {readerExtensions = githubMarkdownExtensions}
-              in writeHtml def . readMarkdown mdDef
-
-getHtmlFilePath :: Configure -> Article -> FilePath
-getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
-                               show (articleIdNum article) ++ ".html"
-
-pureTime :: UTCTime
-pureTime = UTCTime (ModifiedJulianDay 0) 0
