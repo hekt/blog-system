@@ -7,7 +7,6 @@ module IO
     , putLog
     -- read file
     , getConf
-    , getConfWithPath
     , getArticleFromFile
     , decodeTemplateFile
     -- generate file
@@ -57,8 +56,17 @@ import           System.IO
 import           System.Locale (defaultTimeLocale)
 import           System.Posix.Files
 
-import Setting
 import Model
+
+
+-- definition
+
+markdownExtensions :: [String]
+markdownExtensions = [ ".markdown", ".mdown", ".mkdn", ".md", ".mkd", ".mdwn"
+                     , ".mdtxt", ".mdtext", ".text" ]
+
+htmlExtensions :: [String]
+htmlExtensions = [ ".html", ".htm" ]
 
 
 -- parse command args
@@ -110,12 +118,8 @@ putLog level msg = do
 
 -- read file
 
-getConf :: IO (Either String Configure)
-getConf = getAppUserDataDirectory appDirName 
-          >>= return . (</> confFileName) >>= decodeYamlFile
-
-getConfWithPath :: FilePath -> IO (Either String Configure)
-getConfWithPath path = decodeYamlFile path
+getConf :: FilePath -> IO (Either String Configure)
+getConf path = decodeYamlFile path
 
 getArticleFromFile :: AbsPath -> ArticleId -> IO (Either String Article)
 getArticleFromFile file aid = do

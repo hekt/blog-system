@@ -17,7 +17,6 @@ import           System.Environment (getArgs)
 import           System.Directory
 import           System.FilePath
 
-import Setting
 import Model
 import IO
 import DB

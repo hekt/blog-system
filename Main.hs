@@ -12,7 +12,7 @@ main = ioeLogger . runErrorT $ do
   args  <- liftIO $ fmap parseArgs getArgs
   path  <- ErrorT . return $ lookupValue "conf" args
   path' <- liftIO $ expandTilde path
-  conf  <- ErrorT $ getConfWithPath path'
+  conf  <- ErrorT $ getConf path'
   mode  <- ErrorT . return $ lookupValue "no label" args
   
   case mode of
