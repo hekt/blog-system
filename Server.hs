@@ -12,7 +12,7 @@ import           Web.Scotty
 
 import Model
 import IO
-import DB
+import DB hiding (access')
 
 main = scotty 53908 $ do
   get "/api/related-posts" $ do
