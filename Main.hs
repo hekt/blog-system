@@ -8,6 +8,7 @@ import           System.Environment (getArgs)
 import Model
 import IO
 import Config (runConfig)
+import Server (runServer)
 import Task (runUpdate, runRebuild, runForceRebuild)
 
 type Args = [(String, [String])]
@@ -55,5 +56,4 @@ runServer' args = ioeLogger . runErrorT $ do
   let port = case "port" `lookup` args of
                Nothing  -> 53908
                Just [p] -> maybe 53908 id $ safeRead p
-  -- runServer conf port
-  return ()
+  liftIO $ runServer conf port

@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 
+module Server (runServer) where
+
 import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe
@@ -14,9 +16,10 @@ import Model
 import IO
 import DB hiding (access')
 
-main = scotty 53908 $ do
+runServer :: Configure -> Int -> IO ()
+runServer conf port = scotty port $ do
   get "/api/related-posts" $ do
-    ps       <- params
+    ps <- params
     relateds <- liftIO $ getRelatedPosts ps
     case relateds of
       Just articles -> json $ articles
