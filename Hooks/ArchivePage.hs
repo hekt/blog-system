@@ -29,10 +29,8 @@ putLog' level = putLog level . (++) "ArchivePage: "
 
 archivePage :: Configure -> [Article] -> IO ()
 archivePage conf _ = ioeLogger' . runErrorT $ do
-  let tempPath = maybe (articleTemplateFile conf) id $
-                 "archive_template_file" `M.lookup` optConfs conf
-      savePath = maybe (htmlDirectory conf </> "archive.html") id $
-                 "archive_page_file" `M.lookup` optConfs conf
+  let tempPath = templateDirectory conf </> "archive-page.html"
+      savePath = htmlDirectory conf </> "archive.html"
       pjs = ["title" =: 1, "id" =: 1, "tags" =: 1, "pubdate" =: 1]
   template <- liftIO $ decodeTemplateFile tempPath
   docs     <- ErrorT $ accessToBlog' conf $

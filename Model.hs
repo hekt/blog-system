@@ -72,38 +72,27 @@ instance Show LogLevel where
     show WarnLog  = "WARN "
     show ErrorLog = "ERROR"
 
-data TemplateData = TemplateData
-    { config_data  :: Configure
-    , article_data :: TArticle
-    } deriving (Data, Typeable)
-
-data Configure = Configure
-    { blogTitle           :: T.Text
-    , blogUrl             :: T.Text
-    , articleTemplateFile :: String
-    , htmlDirectory       :: String
-    , databaseName        :: T.Text
-    , databaseHost        :: String
-    , optConfs            :: M.Map String String
+data Configure = Configure 
+    { templateDirectory :: String
+    , sourceDirectory   :: String
+    , htmlDirectory     :: String
+    , databaseName      :: T.Text
+    , databaseHost      :: String
     } deriving (Show, Data, Typeable)
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
-                           <$> v .: "title"
-                           <*> v .: "url"
-                           <*> v .: "article_template"
+                           <$> v .: "template_directory"
+                           <*> v .: "source_directory"
                            <*> v .: "html_directory"
                            <*> v .: "database_name"
                            <*> v .: "database_host"
-                           <*> v .: "options"
     parseJSON _          = mzero
 instance ToJSON Configure where
-    toJSON c = object [ "title"            .= blogTitle c
-                      , "url"              .= blogUrl c
-                      , "article_template" .= articleTemplateFile c
-                      , "html_directory"   .= htmlDirectory c
-                      , "database_name"    .= databaseName c
-                      , "database_host"    .= databaseHost c
-                      , "options"          .= optConfs c
+    toJSON c = object [ "template_directory" .= templateDirectory c
+                      , "source_directory"   .= sourceDirectory c
+                      , "html_directory"     .= htmlDirectory c
+                      , "database_name"      .= databaseName c
+                      , "database_host"      .= databaseHost c
                       ]
 
 data ArticleYaml = ArticleYaml

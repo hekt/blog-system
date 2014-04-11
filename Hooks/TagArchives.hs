@@ -35,8 +35,7 @@ handler e = putLog' ErrorLog $ show e
 tagArchives :: Configure -> [Article] -> IO ()
 tagArchives conf articles = handle handler $ do
   let tags = getTagsFromArticles articles
-      tempPath = maybe (articleTemplateFile conf) id $ 
-                 "tag_archives_template_file" `M.lookup` optConfs conf
+      tempPath = templateDirectory conf </> "tag-archives.html"
   pipe     <- runIOE $ connect (host $ databaseHost conf)
   template <- decodeTemplateFile tempPath
   forM_ tags $ \tag -> do
@@ -51,9 +50,7 @@ getTagsFromArticles = nubOrd . concatMap articleTags
 
 generateTagArchive :: Text -> Configure -> Text -> [MaybeArticle] -> IO ()
 generateTagArchive template conf tag atcs = do
-  let dir = case "tag_archives_directory" `M.lookup` optConfs conf of
-              Just d  -> d
-              Nothing -> htmlDirectory conf </> "tags"
+  let dir = htmlDirectory conf </> "tags"
       name = (filenameEncode $ T.unpack tag) ++ ".html"
       tatcs = TagArchiveValues conf tag $ 
               map (articleToTArticle . mArticleToArticle) atcs

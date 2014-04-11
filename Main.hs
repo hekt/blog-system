@@ -1,40 +1,59 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Control.Monad.Error
+import           System.Directory (getHomeDirectory)
+import           System.FilePath ((</>))
 import           System.Environment (getArgs)
 
 import Model
 import IO
+import Config (runConfig)
 import Task (runUpdate, runRebuild, runForceRebuild)
 
+type Args = [(String, [String])]
+
 main :: IO ()
-main = ioeLogger . runErrorT $ do
-  args  <- liftIO $ fmap parseArgs getArgs
-  path  <- ErrorT . return $ lookupValue "conf" args
-  path' <- liftIO $ expandTilde path
-  conf  <- ErrorT $ getConf path'
-  mode  <- ErrorT . return $ lookupValue "no label" args
-  
-  case mode of
-    "update"  -> runUpdate' conf args
-    "rebuild" -> runRebuild' conf args
-    _         -> ErrorT . return $ Left "invalid arguments"
+main = do
+  (cmd:args) <- getArgs
+  let args' = parseArgs args
+  case cmd of
+    "update"  -> runUpdate' args'
+    "rebuild" -> runRebuild' args'
+    "config"  -> runConfig' args'
+    "server"  -> runServer' args'
+    _         -> putStrLn "no help"
 
-lookupValue :: String -> [(String, [String])] -> Either String String
-lookupValue k args = 
-    case k `lookup` args of
-      Just (v:_)  -> Right v
-      _           -> Left $ concat ["argument '", k, "' is missing or invalid"]
+getConfByArgs :: Args -> IO (Either String Configure)
+getConfByArgs args = do
+  path <- case "conf" `lookup` args of
+            Just [p] -> expandTilde p
+            Nothing  -> fmap (</> ".kirstie.conf") getHomeDirectory
+  getConf path
 
-runUpdate' :: Configure -> [(String, [String])] -> ErrorT String IO ()
-runUpdate' conf args = do
-  dir <- ErrorT . return $ lookupValue "dir" args
-  runUpdate conf dir
+runUpdate' :: Args -> IO ()
+runUpdate' args = ioeLogger . runErrorT $ do
+  conf <- ErrorT $ getConfByArgs args
+  runUpdate conf
 
-runRebuild' :: Configure -> [(String, [String])] -> ErrorT String IO ()
-runRebuild' conf args = case "force" `lookup` args of
-                          Nothing -> runRebuild conf
-                          Just _  -> runForceRebuild conf
+runRebuild' :: Args -> IO ()
+runRebuild' args = ioeLogger . runErrorT $ do
+  conf <- ErrorT $ getConfByArgs args
+  case "force" `lookup` args of
+    Nothing -> runRebuild conf
+    Just _  -> runForceRebuild conf
 
-displayHelp :: IO ()
-displayHelp = putStrLn "think for yourself"
+runConfig' :: Args -> IO ()
+runConfig' args = ioeLogger . runErrorT $ do
+  path <- case "output" `lookup` args of
+            Nothing  -> liftIO $ fmap (</> ".kirstie.conf") getHomeDirectory
+            Just [p] -> liftIO $ expandTilde p
+  liftIO $ runConfig path
+
+runServer' :: Args -> IO ()
+runServer' args = ioeLogger . runErrorT $ do
+  conf <- ErrorT $ getConfByArgs args
+  let port = case "port" `lookup` args of
+               Nothing  -> 53908
+               Just [p] -> maybe 53908 id $ safeRead p
+  -- runServer conf port
+  return ()

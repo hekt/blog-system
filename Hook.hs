@@ -5,8 +5,8 @@ module Hook
 
 import Model
 import Hooks.RelatedPosts
-import Hooks.AtomFeed
-import Hooks.XmlSitemap
+-- import Hooks.AtomFeed
+-- import Hooks.XmlSitemap
 import Hooks.AmazonAssociates
 import Hooks.TagArchives
 import Hooks.ArchivePage
@@ -17,8 +17,8 @@ beforeSaveHooks = [ amazonAssociates
 
 afterSaveHooks :: [Configure -> [Article] -> IO ()]
 afterSaveHooks = [ relatedPosts
-                 , atomFeed
-                 , xmlSitemap
+                 -- , atomFeed
+                 -- , xmlSitemap
                  , tagArchives
                  , archivePage
                  ]

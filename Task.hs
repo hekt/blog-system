@@ -24,11 +24,11 @@ import Hook
 
 -- update
 
-runUpdate :: Configure -> FilePath -> ErrorT String IO ()
-runUpdate conf dir = do
-  lastRun    <- liftIO $ getLastRunTime conf
-  dir'       <- liftIO $ expandTilde dir
-  files      <- liftIO $ getUpdatedMdFiles lastRun dir'
+runUpdate :: Configure -> ErrorT String IO ()
+runUpdate conf = do
+  lastRun <- liftIO $ getLastRunTime conf
+  dir     <- liftIO $ expandTilde $ sourceDirectory conf
+  files   <- liftIO $ getUpdatedMdFiles lastRun dir
   liftIO $ putLog InfoLog $ unwords [ "Found", show $ length files
                                     , "new/updated file(s)" ]
   knownFiles <- liftIO $ getAllArticleSourceAndIds conf
@@ -84,7 +84,8 @@ runWithDB conf = do
 runWith :: Configure -> [Either String Article] -> IO (Either String [Article])
 runWith conf eitherArticles = runErrorT $ do
   let (errors, articles) = partitionEithers eitherArticles
-  template  <- liftIO $ decodeTemplateFile $ articleTemplateFile conf
+  template  <- liftIO $ decodeTemplateFile $ 
+               templateDirectory conf </> "article.html"
   articles' <- liftIO $ doBeforeSaveHooks conf articles
   liftIO $ forM_ articles' $ generateHtmlFileWithLog template conf
   liftIO $ forM_ errors $ putLog ErrorLog
