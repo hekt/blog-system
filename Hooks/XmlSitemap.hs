@@ -37,14 +37,12 @@ putLog' level = putLog level . (++) "XmlSitemap: "
 
 xmlSitemap :: Configure -> [Article] -> IO ()
 xmlSitemap conf _ = ioeLogger' . runErrorT $ do
-  let tempPath   = templateDirectory conf </> "xml-sitemap.xml"
-      outputPath = htmlDirectory conf </> "sitemap.xml"
+  let path = htmlDirectory conf </> "sitemap.xml"
   docs     <- ErrorT $ getDocuments conf
-  template <- liftIO $ decodeTemplateFile tempPath
   res      <- liftIO $ buildContent conf $ map parseBSON docs
   liftIO $ do
-    TL.writeFile outputPath res
-    putLog' InfoLog $ unwords ["Successfully generated", outputPath]
+    TL.writeFile path res
+    putLog' InfoLog $ unwords ["Successfully generated", path]
 
 blogLastMod :: [MaybeArticle] -> UTCTime
 blogLastMod articles = maximum . catMaybes $ map mArticleLastModified articles
