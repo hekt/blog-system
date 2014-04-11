@@ -73,7 +73,8 @@ instance Show LogLevel where
     show ErrorLog = "ERROR"
 
 data Configure = Configure 
-    { templateDirectory :: String
+    { blogUrl           :: String
+    , templateDirectory :: String
     , sourceDirectory   :: String
     , htmlDirectory     :: String
     , databaseName      :: T.Text
@@ -81,14 +82,16 @@ data Configure = Configure
     } deriving (Show, Data, Typeable)
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
-                           <$> v .: "template_directory"
+                           <$> v .: "blog_url"
+                           <*> v .: "template_directory"
                            <*> v .: "source_directory"
                            <*> v .: "html_directory"
                            <*> v .: "database_name"
                            <*> v .: "database_host"
     parseJSON _          = mzero
 instance ToJSON Configure where
-    toJSON c = object [ "template_directory" .= templateDirectory c
+    toJSON c = object [ "blog_url"           .= blogUrl c
+                      , "template_directory" .= templateDirectory c
                       , "source_directory"   .= sourceDirectory c
                       , "html_directory"     .= htmlDirectory c
                       , "database_name"      .= databaseName c
@@ -167,6 +170,7 @@ data TArticle = TArticle
     , pubdate :: TPubdate
     , tags :: [TTag]
     , content :: T.Text
+    , lastmod :: T.Text
     } deriving (Data, Typeable)
 
 data TPubdate = TPubdate
@@ -213,7 +217,9 @@ articleToTArticle article =
     , aid    = articleIdNum article
     , pubdate = pd
     , tags    = ts
-    , content = articleContent article}
+    , content = articleContent article
+    , lastmod = T.pack . rfcTime $ articleLastModified article
+    }
     where pd = let f s = T.pack . formatTime defaultTimeLocale s $ 
                          ModifiedJulianDay $ articlePubdate article
                in TPubdate { date = f "%F"
@@ -241,3 +247,6 @@ mArticleToTArticle = articleToTArticle . mArticleToArticle
 filenameEncode :: String -> String
 filenameEncode str = map f str
     where f c = if c `elem` ['/', '\0'] then '-' else c
+
+rfcTime :: UTCTime -> String
+rfcTime = formatTime defaultTimeLocale "%FT%TZ"

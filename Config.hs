@@ -10,7 +10,8 @@ import IO
 
 runConfig :: FilePath -> IO ()
 runConfig path = do
-  let labels = [ "template_directory: "
+  let labels = [ "blog_url: "
+               , "template_directory: "
                , "source_directory: "
                , "html_directory: "
                , "database_name: "
