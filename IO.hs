@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module IO
     -- logging
@@ -31,6 +32,7 @@ import           Control.Monad.Error
 import           Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
+import           Data.Data (Data, Typeable)
 import           Data.Maybe (listToMaybe)
 import           Data.Text (Text, strip, splitOn, unpack)
 import qualified Data.Text as T
@@ -57,6 +59,13 @@ import           System.Locale (defaultTimeLocale)
 import           System.Posix.Files
 
 import Model
+
+
+data BlogData     = BlogData { url :: String
+                             } deriving (Data, Typeable)
+data TemplateData = TemplateData { blog :: BlogData
+                                 , article :: TArticle
+                                 } deriving (Data, Typeable)
 
 
 -- PURE
@@ -300,7 +309,8 @@ generateHtmlFile :: Text -> Configure -> Article -> IO ()
 generateHtmlFile template conf article = do
   let dir = htmlDirectory conf </> "archives"
       name = (show $ articleIdNum article) ++ ".html"
-      tempData = articleToTArticle article
+      blogData = BlogData $ blogUrl conf
+      tempData = TemplateData blogData $ articleToTArticle article
   res <- hastacheStr defaultConfig template $ mkGenericContext tempData
   TL.writeFile (dir </> name) res
 
