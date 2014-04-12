@@ -4,3 +4,6 @@ resources/
 html/
 example/
 templates/
+packages/
+*-packages.conf.d/
+add-source-timestamps
