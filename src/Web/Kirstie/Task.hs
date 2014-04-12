@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Task 
+module Web.Kirstie.Task 
     ( runUpdate
     , runRebuild
     , runForceRebuild
@@ -17,10 +17,10 @@ import           System.Environment (getArgs)
 import           System.Directory
 import           System.FilePath
 
-import Model
-import IO
-import DB
-import Hook
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.DB
+import Web.Kirstie.Hook
 
 -- update
 

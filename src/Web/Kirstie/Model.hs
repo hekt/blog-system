@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Model where
+module Web.Kirstie.Model where
 
 import           Prelude hiding (lookup)
 import           Control.Applicative ((<$>), (<*>), pure)

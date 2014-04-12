@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 
-module Hooks.RelatedPosts (relatedPosts) where
+module Web.Kirstie.Hooks.RelatedPosts (relatedPosts) where
 
 import           Control.Exception
 import           Control.Monad
@@ -11,9 +11,9 @@ import           Data.Ord (comparing)
 import           Data.Text (Text)
 import           Database.MongoDB hiding (sort, lookup, count)
 
-import Model
-import IO
-import DB
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.DB
 
 ioeLogger' = ioeLoggerWithLabel "RelatedPosts: "
 putLog' level = putLog level . (++) "RelatedPosts: "

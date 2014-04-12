@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Hooks.XmlSitemap (xmlSitemap) where
+module Web.Kirstie.Hooks.XmlSitemap (xmlSitemap) where
 
 import           Control.Monad.Error
 import           Data.Data (Data, Typeable)
@@ -21,9 +21,9 @@ import           Database.MongoDB
 import           System.FilePath ((</>))
 import           System.Locale (defaultTimeLocale)
 
-import Model
-import IO
-import DB
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.DB
 
 data BlogData     = BlogData { url     :: String
                              , lastmod :: String

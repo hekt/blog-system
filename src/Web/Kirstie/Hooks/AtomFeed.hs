@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Hooks.AtomFeed (atomFeed) where
+module Web.Kirstie.Hooks.AtomFeed (atomFeed) where
 
 import           Control.Monad.Error
 import           Data.Data (Data, Typeable)
@@ -14,9 +14,9 @@ import           Text.Hastache
 import           Text.Hastache.Context
 import           System.FilePath ((</>))
 
-import Model
-import IO
-import DB
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.DB
 
 data BlogData     = BlogData { url     :: String
                              , lastmod :: String

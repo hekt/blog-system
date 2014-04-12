@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Hooks.TagArchives (tagArchives) where
+module Web.Kirstie.Hooks.TagArchives (tagArchives) where
 
 import           Control.Exception
 import           Control.Monad
@@ -17,9 +17,9 @@ import           Text.Hastache
 import           Text.Hastache.Context
 import           System.FilePath ((</>))
 
-import Model
-import IO
-import DB
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.DB
 
 data TagArchiveValues = TagArchiveValues
     { config_data :: Configure

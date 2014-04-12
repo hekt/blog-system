@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 
-module Hooks.AmazonAssociates (amazonAssociates) where
+module Web.Kirstie.Hooks.AmazonAssociates (amazonAssociates) where
 
 import           Data.Text (Text, pack, unpack, breakOn, breakOnEnd)
 import qualified Data.Text as T
 import           Text.Regex
 
-import Model
+import Web.Kirstie.Model
 
 amazonAssociates :: Configure -> [Article] -> IO [Article]
 amazonAssociates _ = return . map f

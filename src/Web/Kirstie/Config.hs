@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Config where
+module Web.Kirstie.Config where
 
 import           Control.Monad
 import           System.Directory (canonicalizePath)
 
-import Model
-import IO
+import Web.Kirstie.Model
+import Web.Kirstie.IO
 
 runConfig :: FilePath -> IO ()
 runConfig path = do

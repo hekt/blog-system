@@ -1,15 +1,15 @@
-module Hook
+module Web.Kirstie.Hook
     ( afterSaveHooks
     , beforeSaveHooks
     ) where
 
-import Model
-import Hooks.RelatedPosts
-import Hooks.AtomFeed
-import Hooks.XmlSitemap
-import Hooks.AmazonAssociates
-import Hooks.TagArchives
-import Hooks.ArchivePage
+import Web.Kirstie.Model
+import Web.Kirstie.Hooks.RelatedPosts
+import Web.Kirstie.Hooks.AtomFeed
+import Web.Kirstie.Hooks.XmlSitemap
+import Web.Kirstie.Hooks.AmazonAssociates
+import Web.Kirstie.Hooks.TagArchives
+import Web.Kirstie.Hooks.ArchivePage
 
 beforeSaveHooks :: [Configure -> [Article] -> IO [Article]]
 beforeSaveHooks = [ amazonAssociates

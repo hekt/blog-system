@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Hooks.ArchivePage (archivePage) where
+module Web.Kirstie.Hooks.ArchivePage (archivePage) where
 
 import           Control.Monad.Error
 import           Data.Data (Data, Typeable)
@@ -15,9 +15,9 @@ import           Text.Hastache
 import           Text.Hastache.Context
 import           System.FilePath ((</>))
 
-import Model
-import DB
-import IO
+import Web.Kirstie.Model
+import Web.Kirstie.DB
+import Web.Kirstie.IO
 
 data ArchivePageValues = ArchivePageValues 
     { config_data :: Configure

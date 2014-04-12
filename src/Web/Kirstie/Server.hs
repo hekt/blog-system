@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Server (runServer) where
+module Web.Kirstie.Server (runServer) where
 
 import           Control.Monad
 import           Control.Monad.Trans
@@ -14,9 +14,9 @@ import           Database.MongoDB hiding (lookup, Value)
 import           Web.Scotty
 import           System.FilePath ((</>), takeExtension)
 
-import Model
-import IO
-import DB hiding (access')
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.DB hiding (access')
 
 runServer :: Configure -> Int -> IO ()
 runServer conf port = scotty port $ do
@@ -29,7 +29,7 @@ runServer conf port = scotty port $ do
       Just articles -> json $ articles
       Nothing       -> json $ object []
     setHeader "content-type" "application/json; charset=UTF-8"
-    setHeader "Access-Control-Allow-Origin" "http://localhost:8888"
+    setHeader "Access-Control-Allow-Origin" "http://localhost:38888"
 
   -- articles
   get "/archives/:aid" $ do

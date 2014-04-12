@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module IO
+module Web.Kirstie.IO
     -- logging
     ( ioeLogger
     , ioeLoggerWithLabel
@@ -58,7 +58,7 @@ import           System.IO
 import           System.Locale (defaultTimeLocale)
 import           System.Posix.Files
 
-import Model
+import Web.Kirstie.Model
 
 
 data BlogData     = BlogData { url :: String

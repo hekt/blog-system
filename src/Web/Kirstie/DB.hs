@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 
-module DB 
+module Web.Kirstie.DB 
     ( saveArticlesToDB
     , getLatestIdNumber
     , getKnownList
@@ -22,8 +22,8 @@ import           Control.Monad.IO.Class (MonadIO)
 import           Data.Time.Clock (UTCTime, getCurrentTime)
 import           Database.MongoDB
 
-import Model
-import IO
+import Web.Kirstie.Model
+import Web.Kirstie.IO
 
 accessToBlog :: Configure -> Action IO a -> IO (Either Failure a)
 accessToBlog conf act = do

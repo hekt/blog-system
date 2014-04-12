@@ -5,11 +5,11 @@ import           System.Directory (getHomeDirectory)
 import           System.FilePath ((</>))
 import           System.Environment (getArgs)
 
-import Model
-import IO
-import Config (runConfig)
-import Server (runServer)
-import Task (runUpdate, runRebuild, runForceRebuild)
+import Web.Kirstie.Model
+import Web.Kirstie.IO
+import Web.Kirstie.Config (runConfig)
+import Web.Kirstie.Server (runServer)
+import Web.Kirstie.Task (runUpdate, runRebuild, runForceRebuild)
 
 type Args = [(String, [String])]
 
