@@ -56,6 +56,7 @@ saveArticlesToDB conf articles = do
     let selector = ["id" =: articleIdNum article]
     access pipe master dbName $ 
            repsert (select selector "articles") $ toBSON article
+  close pipe
                         
 getLatestIdNumber :: Configure -> IO Int
 getLatestIdNumber conf = do
