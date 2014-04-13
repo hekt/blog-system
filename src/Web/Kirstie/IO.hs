@@ -307,6 +307,7 @@ generateHtmlFile template conf article = do
       blogData = BlogData $ blogUrl conf
       tempData = TemplateData blogData $ articleToTArticle article
   res <- hastacheStr defaultConfig template $ mkGenericContext tempData
+  createDirectoryIfMissing True dir
   TL.writeFile (dir </> name) res
 
 removeHtmlFiles :: Configure -> IO ()
