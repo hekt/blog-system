@@ -11,14 +11,15 @@ module Web.Kirstie.IO
     , getArticleFromFile
     , decodeTemplateFile
     -- generate file
+    , generateHtmlFile
     , generateHtmlFileWithLog
     -- remove file
     , removeHtmlFiles
     -- directory
     , getUpdatedMdFiles
     , expandTilde
-    -- time
-    , pureTime
+    -- file info
+    , getLastModified
     -- args
     , parseArgs
     -- utils
@@ -216,13 +217,6 @@ getHtmlFilePath :: Configure -> Article -> FilePath
 getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
                                show (articleIdNum article) ++ ".html"
 
--- | default time
--- 
--- >>> pureTime
--- 1858-11-17 00:00:00 UTC
-pureTime :: UTCTime
-pureTime = UTCTime (ModifiedJulianDay 0) 0
-
 
 -- IO
 
@@ -268,12 +262,13 @@ getArticleFromFile' file aid = runErrorT $ do
   (yaml, html) <- ErrorT $ decodeYamlAndGfmFile file
   date         <- ErrorT . return $ getDayFromText $ yamlPubdate yaml
   time         <- liftIO $ getLastModified file
+  file'        <- canonicalizePath file
   return Article { articleTitle        = yamlTitle yaml
                  , articleIdNum        = aid
                  , articlePubdate      = date
                  , articleTags         = csv2texts $ yamlTags yaml
                  , articleContent      = TL.toStrict $ renderHtml html
-                 , articleSourceFile   = file
+                 , articleSourceFile   = file'
                  , articleLastModified = time
                  , articleIsImported   = False
                  }
@@ -321,20 +316,20 @@ expandTilde :: FilePath -> IO FilePath
 expandTilde ('~':'/':path) = getHomeDirectory >>= return . (</> path)
 expandTilde path           = return path
 
-getUpdatedMdFiles :: UTCTime -> AbsPath -> IO [FilePath]
+getUpdatedMdFiles :: UTCTime -> FilePath -> IO [FilePath]
 getUpdatedMdFiles lastRun dir = do
   files   <- getMdFiles dir
   filterM (isUpdated lastRun) files
 
-getMdFiles :: AbsPath -> IO [FilePath]
+getMdFiles :: FilePath -> IO [FilePath]
 getMdFiles dir =
     let f = map (dir </>) . filter (\x -> isVisibleFile x && isMarkdownFile x)
-    in fmap f (getDirectoryContents dir) >>= mapM canonicalizePath
+    in fmap f (getDirectoryContents dir)
 
-getHtmlFiles :: AbsPath -> IO [FilePath]
+getHtmlFiles :: FilePath -> IO [FilePath]
 getHtmlFiles dir = 
     let f = map (dir </>) . filter (\x -> isVisibleFile x && isHtmlFile x)
-    in fmap f (getDirectoryContents dir) >>= mapM canonicalizePath
+    in fmap f (getDirectoryContents dir)
 
 
 isUpdated :: UTCTime -> FilePath -> IO Bool
