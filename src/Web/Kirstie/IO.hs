@@ -262,7 +262,7 @@ getArticleFromFile' file aid = runErrorT $ do
   (yaml, html) <- ErrorT $ decodeYamlAndGfmFile file
   date         <- ErrorT . return $ getDayFromText $ yamlPubdate yaml
   time         <- liftIO $ getLastModified file
-  file'        <- canonicalizePath file
+  file'        <- liftIO $ canonicalizePath file
   return Article { articleTitle        = yamlTitle yaml
                  , articleIdNum        = aid
                  , articlePubdate      = date
