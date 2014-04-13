@@ -50,6 +50,8 @@ instance Minimal Bool where
     minimal = False
 instance Minimal UTCTime where
     minimal = UTCTime (ModifiedJulianDay 0) 0
+instance Minimal Day where
+    minimal = ModifiedJulianDay 0
 instance Minimal Integer where
     minimal = 0
 instance Minimal (Maybe a) where
@@ -79,7 +81,7 @@ data Configure = Configure
     , htmlDirectory     :: String
     , databaseName      :: T.Text
     , databaseHost      :: String
-    } deriving (Show, Data, Typeable)
+    } deriving (Show, Data, Typeable, Eq)
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
                            <$> v .: "blog_url"
@@ -119,7 +121,7 @@ data Article = Article
     , articleSourceFile   :: String
     , articleLastModified :: UTCTime
     , articleIsImported   :: Bool
-    } deriving (Show, Data, Typeable)
+    } deriving (Show, Eq, Data, Typeable)
 instance FromJSON Article where
     parseJSON (Object v) = Article
                            <$> v .: "title"
