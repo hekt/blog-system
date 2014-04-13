@@ -25,22 +25,18 @@ import           System.Posix.Files
 import Web.Kirstie.Model
 import Web.Kirstie.IO
 
-testDatabaseName :: String
-testDatabaseName = "_KirstieTestTable"
-testDatabaseHost :: String
-testDatabaseHost = "localhost"
 testDirectoryName :: String
 testDirectoryName = "kirstie"
+
+testConfig :: Configure
 testConfig = Configure
              { blogUrl           = "http://www.example.com/"
              , templateDirectory = "template_directory"
              , sourceDirectory   = "source_directory"
              , htmlDirectory     = "output_directory"
-             , databaseName      = T.pack testDatabaseName
-             , databaseHost      = testDatabaseHost
+             , databaseName      = "KirstieTest"
+             , databaseHost      = "localhost"
              }
-testArticles :: [Article]
-testArticles = []
 
 spec :: Spec
 spec = do
@@ -49,12 +45,13 @@ spec = do
       let name = "test_config_success_1.yaml"
           body = BL.intercalate "\n" 
                  [ "blog_url: http://www.example.com/"
-                 , "template_directory: temprate_directory"
+                 , "template_directory: template_directory"
                  , "source_directory: source_directory"
                  , "html_directory: output_directory"
-                 , "database_name: " `mappend` BL.pack testDatabaseName
-                 , "database_host: " `mappend` BL.pack testDatabaseHost ]
+                 , "database_name: KirstieTest"
+                 , "database_host: localhost" ]
       BL.writeFile name body
+      getConf name `shouldReturn` Right testConfig
 
     it "get invalid file" $ onTemporaryDirectory $ \path -> do
       let name   = "test_config_failure_1.yaml"
@@ -265,63 +262,3 @@ onTemporaryDirectory act = do
       teardown p = setCurrentDirectory curDir >> removeDirectoryRecursive p
       act' p     = setCurrentDirectory p >> act p
   bracket setup teardown act'
-
-withDatabase :: (Configure -> IO a) -> IO a
-withDatabase act = do
-  pipe <- runIOE $ connect (host $ databaseHost testConfig)
-  let setup         = return testConfig
-      teardown conf = do
-        pipe <- runIOE $ connect (host $ databaseHost conf)
-        e    <- access pipe master (databaseName conf) $ allCollections
-        case e of
-          Left _     -> return ()
-          Right cols -> forM_ cols $ \col -> do
-            access pipe master (databaseName conf) $ delete (select [] col)
-        close pipe
-  bracket setup teardown act
-
-createTestFiles :: IO ()
-createTestFiles = mapM_ (uncurry BL.writeFile) $
-                  zip testArticleFileNames testArticleStrings
-
-
--- test data
-
-testArticleFileNames = [ "test_article_success_1.md"
-                       , "test_article_success_2.md" 
-                       , "test_article_failure_1.md"
-                       , "test_article_failure_2.md" ]
-testArticleStrings = [ BL.intercalate "\n" [ "---"
-                                           , "title: test 1"
-                                           , "tags: foo, bar"
-                                           , "pubdate: 1988-05-29" 
-                                           , "---"
-                                           , "hoge" ]
-                     , BL.intercalate "\n" [ "---"
-                                           , "title: test 2"
-                                           , "tags: baz"
-                                           , "pubdate: 1989-08-07" 
-                                           , "---"
-                                           , "fuga" ]
-                     , BL.intercalate "\n" [ "---" 
-                                           , "title: test 3"
-                                           , "tags: qux"
-                                           , "---"
-                                           , "nyan" ]
-                     , BL.intercalate "\n" [ "---" 
-                                           , "title: test 4"
-                                           , "tags: quux"
-                                           , "pubdate: 2014-04-13" 
-                                           , "hage" ]
-                     ]
-testTemplateString = 
-    BL.intercalate "\n" [ "{{blog.url}}"
-                        , "{{article.title}}"
-                        , "{{article.aid}}"
-                        , "{{article.pubdate.date}}"
-                        , "{{#article.tags}}"
-                        , "{{article.tag}}"
-                        , "{{article.encoded_tag}}"
-                        , "{{/article.tags}}"
-                        , "{{article.content}}"
-                        , "{{article.lastmod}}"]
