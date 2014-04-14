@@ -57,7 +57,7 @@ spec = do
       let name   = "test_config_failure_1.yaml"
           body   = "foo: bar"
           errMsg = unwords [ "yaml parse error: AesonException \"key"
-                         , "\\\"blog_url\\\" not present\"" ]
+                           , "\\\"blog_url\\\" not present\"" ]
       BL.writeFile name body
       getConf name `shouldReturn` Left errMsg
 
