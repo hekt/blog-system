@@ -104,9 +104,6 @@ spec = do
     --   updateLastRunTime testConfig
     --   after  <- getCurrentTime
     --   result <- getLastRunTime testConfig
-    --   putStrLn $ show before
-    --   putStrLn $ show result
-    --   putStrLn $ show after
     --   result `shouldSatisfy` (\t -> before <= t && t <= after)
 
     it "update" $ withDatabase $ \pipe -> do
