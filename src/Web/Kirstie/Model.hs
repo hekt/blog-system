@@ -121,7 +121,7 @@ data Article = Article
     , articleSourceFile   :: String
     , articleLastModified :: UTCTime
     , articleIsImported   :: Bool
-    } deriving (Show, Eq, Data, Typeable)
+    } deriving (Show, Eq, Ord, Data, Typeable)
 instance FromJSON Article where
     parseJSON (Object v) = Article
                            <$> v .: "title"
