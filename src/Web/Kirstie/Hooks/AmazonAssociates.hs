@@ -57,7 +57,7 @@ generateTag name asin =
 
 asin2url :: Text -> Text
 asin2url asin = T.concat [ "http://www.amazon.co.jp/dp/"
-                         , asin, "&tag=hekt-22" ]
+                         , asin, "?tag=hekt-22" ]
 
 asin2img :: Text -> Text
 asin2img asin = T.concat [ "http://images-jp.amazon.com/images/P/"
