@@ -75,6 +75,9 @@ spec = do
     it "'\\0'" $ do
       filenameEncode "foo\0bar" `shouldBe` "foo-bar"
 
+    it "'\NUL'" $ do
+      filenameEncode "foo\NULbar" `shouldBe` "foo-bar"
+
     it "'/'" $ do
       filenameEncode "foo/bar" `shouldBe` "foo-bar"
 
