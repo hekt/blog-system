@@ -24,7 +24,7 @@ withDatabase act = do
       teardown p = do
         close p
         pipe <- runIOE $ connect $ host $ databaseHost testConfig
-        e    <- access p master (databaseName testConfig) $ allCollections
+        e    <- access pipe master (databaseName testConfig) $ allCollections
         whenRight e $ \cols ->
           forM_ cols $ \col -> access pipe master (databaseName testConfig) $
                                delete (select [] col)
