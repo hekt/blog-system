@@ -65,7 +65,11 @@ executable kirstie
 
 test-suite spec
   main-is:             Spec.hs
-  other-modules:       KirstieIOSpec
+  other-modules:       Util
+                       KirstieDBSpec
+                       KirstieIOSpec
+                       KirstieModelSpec
+                       KirstieHooksAmazonAssociatesSpec
   build-depends:       base
                      , text
                      , time
