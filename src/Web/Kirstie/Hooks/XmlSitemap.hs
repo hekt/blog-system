@@ -45,6 +45,7 @@ xmlSitemap conf _ = ioeLogger' . runErrorT $ do
     putLog' InfoLog $ unwords ["Successfully generated", path]
 
 blogLastMod :: [MaybeArticle] -> UTCTime
+blogLastMod []       = minimal
 blogLastMod articles = maximum . catMaybes $ map mArticleLastModified articles
 
 getDocuments :: Configure -> IO (Either String [Document])
