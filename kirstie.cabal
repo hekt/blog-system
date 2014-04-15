@@ -70,6 +70,7 @@ test-suite spec
                        KirstieIOSpec
                        KirstieModelSpec
                        KirstieHooksAmazonAssociatesSpec
+                       KirstieHooksXmlSitemapSpec
   build-depends:       base
                      , text
                      , time
