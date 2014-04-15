@@ -22,8 +22,9 @@ withDatabase :: (Pipe -> IO a) -> IO a
 withDatabase act = do
   let setup         = runIOE $ connect $ host $ databaseHost testConfig
       teardown p = do
-        close p
-        pipe <- runIOE $ connect $ host $ databaseHost testConfig
+        b    <- isClosed p
+        pipe <- if b then runIOE $ connect $ host $ databaseHost testConfig
+                else return p
         e    <- access pipe master (databaseName testConfig) $ allCollections
         whenRight e $ \cols ->
           forM_ cols $ \col -> access pipe master (databaseName testConfig) $
