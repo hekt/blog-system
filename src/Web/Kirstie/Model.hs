@@ -173,18 +173,18 @@ data TArticle = TArticle
     , tags :: [TTag]
     , content :: T.Text
     , lastmod :: T.Text
-    } deriving (Data, Typeable)
+    } deriving (Eq, Show, Data, Typeable)
 
 data TPubdate = TPubdate
     { date :: T.Text
     , year :: T.Text
     , month :: T.Text
     , day :: T.Text
-    } deriving (Data, Typeable)
+    } deriving (Eq, Show, Data, Typeable)
 data TTag = TTag
     { tag :: T.Text
     , encoded_tag :: T.Text
-    } deriving (Data, Typeable)
+    } deriving (Eq, Show, Data, Typeable)
 
 data MaybeArticle = MaybeArticle 
     { mArticleTitle :: Maybe T.Text
@@ -195,7 +195,7 @@ data MaybeArticle = MaybeArticle
     , mArticleSourceFile :: Maybe String
     , mArticleLastModified :: Maybe UTCTime
     , mArticleIsImported   :: Maybe Bool
-    }
+    } deriving (Eq, Show)
 instance FromBSON MaybeArticle where
     parseBSON doc = MaybeArticle 
                     { mArticleTitle = f "title"
