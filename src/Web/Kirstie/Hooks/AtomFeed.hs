@@ -49,4 +49,5 @@ buildContent conf articles = do
   hastacheStr defaultConfig template $ mkGenericContext tempData
 
 blogLastMod :: [Article] -> UTCTime
+blogLastMod []       = minimal
 blogLastMod articles = maximum $ map articleLastModified articles
