@@ -72,6 +72,7 @@ test-suite spec
                        KirstieHooksAmazonAssociatesSpec
                        KirstieHooksAtomFeedSpec
                        KirstieHooksRelatedPostsSpec
+                       KirstieHooksTagArchivesSpec
                        KirstieHooksXmlSitemapSpec
   build-depends:       base
                      , text
