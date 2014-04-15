@@ -13,15 +13,7 @@ import           Database.MongoDB hiding (sort)
 import Web.Kirstie.Model
 import Web.Kirstie.DB
 
-testConfig :: Configure
-testConfig = Configure
-             { blogUrl           = "http://www.example.com/"
-             , templateDirectory = "template_directory"
-             , sourceDirectory   = "source_directory"
-             , htmlDirectory     = "output_directory"
-             , databaseName      = "KirstieTest"
-             , databaseHost      = "localhost"
-             }
+import Util
 
 spec :: Spec
 spec = do
@@ -120,7 +112,7 @@ spec = do
     --          insert "last_run" ["time" =: time]
     --   getLastRunTime testConfig `shouldReturn` time
 
-    it " get" $ withDatabase $ \pipe -> do
+    it "get" $ withDatabase $ \pipe -> do
       time <- getCurrentTime
       access pipe master (databaseName testConfig) $
              insert "last_run" ["time" =: time]
@@ -171,21 +163,3 @@ spec = do
       let failure = AggregateFailure "fail"
           msg = "user error (AggregateFailure \"fail\")"
       show (failureToIOE failure) `shouldBe` msg
-
-
-withDatabase :: (Pipe -> IO a) -> IO a
-withDatabase act = do
-  let setup         = runIOE $ connect $ host $ databaseHost testConfig
-      teardown pipe = do
-        e    <- access pipe master (databaseName testConfig) $ allCollections
-        whenRight e $ \cols ->
-          forM_ cols $ \col -> access pipe master (databaseName testConfig) $
-                               delete (select [] col)
-        close pipe
-  bracket setup teardown act
-
-isRight :: Either a b -> Bool
-isRight = either (\_ -> False) (\_ -> True)
-
-whenRight :: Monad m => Either a b -> (b -> m ()) -> m ()
-whenRight e f = either (\_ -> return ()) f e

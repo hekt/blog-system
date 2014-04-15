@@ -25,18 +25,7 @@ import           System.Posix.Files
 import Web.Kirstie.Model
 import Web.Kirstie.IO
 
-testDirectoryName :: String
-testDirectoryName = "kirstie"
-
-testConfig :: Configure
-testConfig = Configure
-             { blogUrl           = "http://www.example.com/"
-             , templateDirectory = "template_directory"
-             , sourceDirectory   = "source_directory"
-             , htmlDirectory     = "output_directory"
-             , databaseName      = "KirstieTest"
-             , databaseHost      = "localhost"
-             }
+import Util
 
 spec :: Spec
 spec = do
@@ -248,17 +237,3 @@ spec = do
     it "Right" $ do
       let e = Right "foo" :: Either String String
       strError e `shouldBe` Right "foo"
-
-
-generateNullFiles :: [FilePath] -> IO ()
-generateNullFiles = mapM_ (\file -> writeFile file "")
-      
-onTemporaryDirectory :: (FilePath -> IO a) -> IO a
-onTemporaryDirectory act = do
-  curDir  <- getCurrentDirectory
-  tempDir <- getTemporaryDirectory
-  let setup      = (mkdtemp $ tempDir </> testDirectoryName)
-                   >>= canonicalizePath
-      teardown p = setCurrentDirectory curDir >> removeDirectoryRecursive p
-      act' p     = setCurrentDirectory p >> act p
-  bracket setup teardown act'
