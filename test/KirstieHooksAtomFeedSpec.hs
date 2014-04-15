@@ -17,7 +17,7 @@ import Util
 
 spec :: Spec
 spec = do
-  describe "Web.Kirstie.Hooks.XmlSitemap" $ do
+  describe "Web.Kirstie.Hooks.AtomFeed" $ do
 
     it "all values" $ onTestSpace $ \conf pipe path -> do
       let template = BL.concat [ "{{blog.url}}", "{{blog.lastmod}}"
