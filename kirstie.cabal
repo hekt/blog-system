@@ -18,19 +18,6 @@ cabal-version:       >=1.10
 
 executable kirstie
   main-is:             Main.hs
-  other-modules:       Web.Kirstie.Config
-                       Web.Kirstie.DB
-                       Web.Kirstie.IO
-                       Web.Kirstie.Model
-                       Web.Kirstie.Server
-                       Web.Kirstie.Task
-                       Web.Kirstie.Hook
-                       Web.Kirstie.Hooks.AmazonAssociates
-                       Web.Kirstie.Hooks.ArchivePage
-                       Web.Kirstie.Hooks.AtomFeed
-                       Web.Kirstie.Hooks.RelatedPosts
-                       Web.Kirstie.Hooks.TagArchives
-                       Web.Kirstie.Hooks.XmlSitemap
   other-extensions:    OverloadedStrings
                      , ExtendedDefaultRules
                      , DeriveDataTypeable
@@ -65,15 +52,6 @@ executable kirstie
 
 test-suite spec
   main-is:             Spec.hs
-  other-modules:       Util
-                       KirstieDBSpec
-                       KirstieIOSpec
-                       KirstieModelSpec
-                       KirstieHooksAmazonAssociatesSpec
-                       KirstieHooksAtomFeedSpec
-                       KirstieHooksRelatedPostsSpec
-                       KirstieHooksTagArchivesSpec
-                       KirstieHooksXmlSitemapSpec
   build-depends:       base
                      , text
                      , time
