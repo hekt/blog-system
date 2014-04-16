@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Web.Kirstie.Server (runServer) where
+module Web.Kirstie.Server (runServer, serverApp) where
 
 import           Control.Monad
 import           Control.Monad.Trans
@@ -19,8 +19,10 @@ import Web.Kirstie.IO
 import Web.Kirstie.DB hiding (access')
 
 runServer :: Configure -> Int -> IO ()
-runServer conf port = scotty port $ do
+runServer conf port = scotty port $ serverApp conf
 
+serverApp :: Configure -> ScottyM ()
+serverApp conf = do
   -- related posts
   get "/api/related-posts" $ do
     ps <- params
