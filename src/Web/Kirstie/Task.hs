@@ -36,7 +36,8 @@ runUpdate conf = do
   ErrorT . runWithFiles conf $ addIdToFiles knownFiles files latestId
   liftIO $ updateLastRunTime conf
 
-addIdToFiles :: [PathWithId] -> [FilePath] -> ArticleId -> [PathWithId]
+addIdToFiles :: [(FilePath, ArticleId)] -> [FilePath] 
+             -> ArticleId -> [(FilePath, ArticleId)]
 addIdToFiles pairs files = fst . runState (mapM addId files)
     where addId file = state $ case lookup file pairs of
                                  Just m  -> \n -> ((file, m  ), n  )
@@ -62,7 +63,7 @@ runForceRebuild conf = do
 
 -- shared functions
 
-runWithFiles :: Configure -> [PathWithId] -> IO (Either String ())
+runWithFiles :: Configure -> [(FilePath, ArticleId)] -> IO (Either String ())
 runWithFiles conf pairs = do
   articles <- mapM (uncurry getArticleFromFile) pairs
   result   <- runWith conf articles

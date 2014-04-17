@@ -40,7 +40,7 @@ spec = do
     it "Article" $ do
       let article = minimal { articleTags = ["foo", "bar baz"] }
           tArticle = TArticle { title = minimal
-                              , aid   = minimal
+                              , aid   = "0"
                               , pubdate = TPubdate { date  = "1858-11-17"
                                                    , year  = "1858"
                                                    , month = "Nov"
@@ -50,38 +50,3 @@ spec = do
                               , content = minimal
                               , lastmod = "1858-11-17T00:00:00Z" }
       articleToTArticle article `shouldBe` tArticle
-
-
-  describe "Web.Kirstie.Model.mArticleToArticle" $ do
-    it "all Nothing" $ do
-      mArticleToArticle minimal `shouldBe` minimal
-      
-    it "include Just" $ do
-      let article = minimal { articleTitle = "foo" }
-          mArticle = minimal { mArticleTitle = Just "foo" }
-      mArticleToArticle mArticle `shouldBe` article
-
-
-  describe "Web.Kirstie.Model.mArticleToTArticle" $ do
-    it "Article" $ do
-      mArticleToTArticle minimal `shouldBe`
-                             (articleToTArticle . mArticleToArticle $ minimal)
-
-
-  describe "Web.Kirstie.Model.filenameEncode" $ do
-    it "no necessary to encode" $ do
-      filenameEncode "foo bar" `shouldBe` "foo bar"
-
-    it "'\\0'" $ do
-      filenameEncode "foo\0bar" `shouldBe` "foo-bar"
-
-    it "'\NUL'" $ do
-      filenameEncode "foo\NULbar" `shouldBe` "foo-bar"
-
-    it "'/'" $ do
-      filenameEncode "foo/bar" `shouldBe` "foo-bar"
-
-
-  describe "Web.Kirstie.Model.rfcTime" $ do
-    it "1858-11-17 00:00:00 UTC" $ do
-      rfcTime minimal `shouldBe` "1858-11-17T00:00:00Z"

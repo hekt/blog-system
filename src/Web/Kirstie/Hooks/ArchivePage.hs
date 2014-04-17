@@ -41,7 +41,7 @@ archivePage conf _ = ioeLogger' . runErrorT $ do
     TL.writeFile savePath body
     putLog' InfoLog $ unwords ["Successfully generated", savePath]
     
-generateArchive :: Configure -> Text -> [MaybeArticle] -> IO TL.Text
+generateArchive :: Configure -> Text -> [Article] -> IO TL.Text
 generateArchive conf template atcs =
   hastacheStr defaultConfig template . mkGenericContext $
-  ArchivePageValues conf $ map mArticleToTArticle atcs
+  ArchivePageValues conf $ map articleToTArticle atcs

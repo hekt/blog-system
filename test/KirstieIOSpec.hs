@@ -237,3 +237,22 @@ spec = do
     it "Right" $ do
       let e = Right "foo" :: Either String String
       strError e `shouldBe` Right "foo"
+
+
+  describe "Web.Kirstie.IO.filenameEncode" $ do
+    it "no necessary to encode" $ do
+      filenameEncode "foo bar" `shouldBe` "foo bar"
+
+    it "'\\0'" $ do
+      filenameEncode "foo\0bar" `shouldBe` "foo-bar"
+
+    it "'\NUL'" $ do
+      filenameEncode "foo\NULbar" `shouldBe` "foo-bar"
+
+    it "'/'" $ do
+      filenameEncode "foo/bar" `shouldBe` "foo-bar"
+
+
+  describe "Web.Kirstie.IO.rfcTime" $ do
+    it "1858-11-17 00:00:00 UTC" $ do
+      rfcTime minimal `shouldBe` "1858-11-17T00:00:00Z"

@@ -48,12 +48,12 @@ tagArchives conf articles = handle handler $ do
 getTagsFromArticles :: [Article] -> [Text]
 getTagsFromArticles = nubOrd . concatMap articleTags
 
-generateTagArchive :: Text -> Configure -> Text -> [MaybeArticle] -> IO ()
+generateTagArchive :: Text -> Configure -> Text -> [Article] -> IO ()
 generateTagArchive template conf tag atcs = do
   let dir = htmlDirectory conf </> "tags"
       name = (filenameEncode $ T.unpack tag) ++ ".html"
       tatcs = TagArchiveValues conf tag $ 
-              map (articleToTArticle . mArticleToArticle) atcs
+              map articleToTArticle atcs
   result   <- hastacheStr defaultConfig template $ mkGenericContext tatcs
   TL.writeFile (dir </> name) result
   putLog' InfoLog $ unwords ["Successfully generated", dir </> name]

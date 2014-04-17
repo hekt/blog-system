@@ -25,6 +25,8 @@ module Web.Kirstie.IO
     -- utils
     , safeRead
     , strError
+    , rfcTime
+    , filenameEncode
     ) where
 
 import           Control.Exception
@@ -178,7 +180,7 @@ csv2texts = map strip . splitOn ","
 -- 
 -- >>> getDayFromText "2000-01-01"
 -- Right 51544
-getDayFromText :: Text -> Either String MJDay
+getDayFromText :: Text -> Either String Integer
 getDayFromText = let l = Left "cannot parse pubdate"
                      r = Right . toModifiedJulianDay
                  in maybe l r . safeRead . unpack
@@ -217,6 +219,13 @@ getHtmlFilePath :: Configure -> Article -> FilePath
 getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
                                show (articleIdNum article) ++ ".html"
 
+rfcTime :: UTCTime -> String
+rfcTime = formatTime defaultTimeLocale "%FT%TZ"
+
+filenameEncode :: String -> String
+filenameEncode = let cs = ['\NUL', '/']
+                 in map (\c -> if c `elem` cs then '-' else c)
+
 
 -- IO
 
@@ -250,14 +259,14 @@ putLog level msg = do
 getConf :: FilePath -> IO (Either String Configure)
 getConf path = decodeYamlFile path
 
-getArticleFromFile :: AbsPath -> ArticleId -> IO (Either String Article)
+getArticleFromFile :: FilePath -> ArticleId -> IO (Either String Article)
 getArticleFromFile file aid = do
   eitherArticle <- getArticleFromFile' file aid
   case eitherArticle of
     Left msg -> return . Left $ concat [file, ": ", msg]
     r        -> return r
 
-getArticleFromFile' :: AbsPath -> ArticleId -> IO (Either String Article)
+getArticleFromFile' :: FilePath -> ArticleId -> IO (Either String Article)
 getArticleFromFile' file aid = runErrorT $ do
   (yaml, html) <- ErrorT $ decodeYamlAndGfmFile file
   date         <- ErrorT . return $ getDayFromText $ yamlPubdate yaml

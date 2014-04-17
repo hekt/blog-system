@@ -44,17 +44,17 @@ xmlSitemap conf _ = ioeLogger' . runErrorT $ do
     TL.writeFile path res
     putLog' InfoLog $ unwords ["Successfully generated", path]
 
-blogLastMod :: [MaybeArticle] -> UTCTime
+blogLastMod :: [Article] -> UTCTime
 blogLastMod []       = minimal
-blogLastMod articles = maximum . catMaybes $ map mArticleLastModified articles
+blogLastMod articles = maximum $ map articleLastModified articles
 
 getDocuments :: Configure -> IO (Either String [Document])
 getDocuments conf = accessToBlog' conf $ rest =<< find (select [] "articles")
                     { project = ["id" =: 1, "last_modified" =: 1] }
 
-buildContent :: Configure -> [MaybeArticle] -> IO TL.Text
-buildContent conf marticles = do
+buildContent :: Configure -> [Article] -> IO TL.Text
+buildContent conf articles = do
   template <- decodeTemplateFile $ templateDirectory conf </> "xml-sitemap.xml"
-  let blogData = BlogData (blogUrl conf) $ rfcTime $ blogLastMod marticles
-      tempData = TemplateData blogData $ map mArticleToTArticle marticles
+  let blogData = BlogData (blogUrl conf) $ rfcTime $ blogLastMod articles
+      tempData = TemplateData blogData $ map articleToTArticle articles
   hastacheStr defaultConfig template $ mkGenericContext tempData

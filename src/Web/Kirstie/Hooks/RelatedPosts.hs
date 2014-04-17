@@ -34,7 +34,7 @@ take' :: Int -> ArticleId -> [(ArticleId, Float)] -> [ArticleId]
 take' n aid = take n . filter (/= aid) . 
               map fst . reverse . sortBy (comparing snd)
 
-findByTags :: Configure -> Pipe -> [Text] -> StrIOE [Document]
+findByTags :: Configure -> Pipe -> [Text] -> ErrorT String IO [Document]
 findByTags conf pipe tags = ErrorT $ do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select (buildSelectorByTags tags) "articles")
@@ -44,7 +44,7 @@ calcRelated :: [(Text, Float)] -> [Text] -> [Document] -> [(ArticleId, Float)]
 calcRelated scores tags = calcScores scores tags . map doc2pair
 
 -- io
-getScoreList :: Configure -> Pipe -> StrIOE [(Text, Float)]
+getScoreList :: Configure -> Pipe -> ErrorT String IO [(Text, Float)]
 getScoreList conf pipe = ErrorT $ do
   e <- access pipe master (databaseName conf) $
        rest =<< find (select [] "articles") {project = ["tags" =: 1]}
