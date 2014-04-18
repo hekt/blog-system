@@ -16,6 +16,7 @@ import           Text.Hastache.Context
 import           System.FilePath ((</>))
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 import Web.Kirstie.DB
 import Web.Kirstie.IO
 

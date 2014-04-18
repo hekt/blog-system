@@ -10,25 +10,13 @@ import           Control.Applicative ((<$>), (<*>), pure)
 import           Control.Monad (mzero)
 import           Control.Monad.Error
 import           Data.Aeson
-import           Data.Bson (Document, (=:), at, look, lookup, cast, Label, Val)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
+import           Data.Bson (Document, (=:), lookup, Label, Val)
 import           Data.Data (Data, Typeable)
-import qualified Data.Map as M
-import           Data.Maybe (fromJust)
 import           Data.Monoid
-import           Data.List (intercalate)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Internal as TI
-import           Data.Time.Calendar ( Day (ModifiedJulianDay)
-                                    , toModifiedJulianDay )
-import           Data.Time.Clock ( UTCTime (UTCTime), DiffTime)
-import           Data.Time.Format (formatTime)
-import           Network.HTTP (urlEncode)
-import           Text.Hastache
-import           Text.Hastache.Context
-import           System.Locale (defaultTimeLocale)
+import           Data.Time.Calendar (Day (ModifiedJulianDay))
+import           Data.Time.Clock (UTCTime (UTCTime), DiffTime)
 
 
 class ToBSON a where
@@ -67,11 +55,13 @@ type ArticleId  = Int
 
 
 data LogLevel = DebugLog | InfoLog | WarnLog | ErrorLog deriving (Eq, Ord)
+
 instance Show LogLevel where
     show DebugLog = "DEBUG"
     show InfoLog  = "INFO "
     show WarnLog  = "WARN "
     show ErrorLog = "ERROR"
+
 
 data Configure = Configure 
     { blogUrl           :: String
@@ -81,6 +71,7 @@ data Configure = Configure
     , databaseName      :: T.Text
     , databaseHost      :: String
     } deriving (Show, Data, Typeable, Eq)
+
 instance FromJSON Configure where
     parseJSON (Object v) = Configure 
                            <$> v .: "blog_url"
@@ -90,26 +81,21 @@ instance FromJSON Configure where
                            <*> v .: "database_name"
                            <*> v .: "database_host"
     parseJSON _          = mzero
-instance ToJSON Configure where
-    toJSON c = object [ "blog_url"           .= blogUrl c
-                      , "template_directory" .= templateDirectory c
-                      , "source_directory"   .= sourceDirectory c
-                      , "html_directory"     .= htmlDirectory c
-                      , "database_name"      .= databaseName c
-                      , "database_host"      .= databaseHost c
-                      ]
+
 
 data ArticleYaml = ArticleYaml
     { yamlTitle   :: T.Text
     , yamlTags    :: T.Text
     , yamlPubdate :: T.Text
     }
+
 instance FromJSON ArticleYaml where
     parseJSON (Object v) = ArticleYaml
                            <$> v .: "title"
                            <*> v .: "tags"
                            <*> v .: "pubdate"
     parseJSON _          = mzero
+
 
 data Article = Article 
     { articleTitle        :: T.Text
@@ -121,6 +107,7 @@ data Article = Article
     , articleLastModified :: UTCTime
     , articleIsImported   :: Bool
     } deriving (Show, Eq, Ord, Data, Typeable)
+
 instance FromBSON Article where
     parseBSON doc = Article
                     { articleTitle        = f "title"
@@ -134,6 +121,7 @@ instance FromBSON Article where
                     }
         where f :: (Minimal a, Val a) => Label -> a
               f = maybe minimal id . flip lookup doc
+
 instance ToBSON Article where
     toBSON a = [ "title"         =: articleTitle a
                , "id"            =: articleIdNum a
@@ -143,6 +131,7 @@ instance ToBSON Article where
                , "source_file"   =: articleSourceFile a
                , "last_modified" =: articleLastModified a
                , "imported"      =: articleIsImported a ]
+
 instance Minimal Article where
     minimal = Article minimal minimal minimal minimal
                          minimal minimal minimal minimal
@@ -170,21 +159,3 @@ data TTag = TTag
     { tag         :: TL.Text
     , encoded_tag :: TL.Text
     } deriving (Show, Eq, Ord, Data, Typeable)
-
-articleToTArticle :: Article -> TArticle
-articleToTArticle a = TArticle
-                     { title   = TL.fromStrict $ articleTitle a
-                     , aid     = TL.pack . show $ articleIdNum a
-                     , pubdate = TPubdate { date  = pdFormat "%F"
-                                          , year  = pdFormat "%Y"
-                                          , month = pdFormat "%b"
-                                          , day   = pdFormat "%-e" }
-                     , tags    = map tagObj $ articleTags a
-                     , content = TL.fromStrict $ articleContent a
-                     , lastmod = lmFormat "%FT%TZ" }
-    where
-      format s t = TL.pack $ formatTime defaultTimeLocale s t
-      lmFormat s = format s $ articleLastModified a
-      pdFormat s = format s $ ModifiedJulianDay $ articlePubdate a
-      tagObj t = TTag { tag         = TL.fromStrict t
-                      , encoded_tag = TL.pack . urlEncode $ T.unpack t }

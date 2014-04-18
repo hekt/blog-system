@@ -6,7 +6,9 @@ import           System.FilePath ((</>))
 import           System.Environment (getArgs)
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 import Web.Kirstie.IO
+
 import Web.Kirstie.Config (runConfig)
 import Web.Kirstie.Server (runServer)
 import Web.Kirstie.Task (runUpdate, runRebuild, runForceRebuild)

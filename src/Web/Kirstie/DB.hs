@@ -23,6 +23,7 @@ import           Data.Time.Clock (UTCTime, getCurrentTime)
 import           Database.MongoDB
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 import Web.Kirstie.IO
 
 accessToBlog :: Configure -> Action IO a -> IO (Either Failure a)

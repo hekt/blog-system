@@ -20,13 +20,6 @@ module Web.Kirstie.IO
     , expandTilde
     -- file info
     , getLastModified
-    -- args
-    , parseArgs
-    -- utils
-    , safeRead
-    , strError
-    , rfcTime
-    , filenameEncode
     ) where
 
 import           Control.Exception
@@ -62,6 +55,7 @@ import           System.Locale (defaultTimeLocale)
 import           System.Posix.Files
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 
 
 data BlogData     = BlogData { url :: String
@@ -69,162 +63,6 @@ data BlogData     = BlogData { url :: String
 data TemplateData = TemplateData { blog :: BlogData
                                  , article :: TArticle
                                  } deriving (Data, Typeable)
-
-
--- PURE
-
-markdownExtensions :: [String]
-markdownExtensions = [ ".markdown", ".mdown", ".mkdn", ".md", ".mkd", ".mdwn"
-                     , ".mdtxt", ".mdtext", ".text" ]
-
-htmlExtensions :: [String]
-htmlExtensions = [ ".html", ".htm" ]
-
--- | parse command line arguments
--- 
--- >>> parseArgs ["foo", "--bar", "--baz", "qux", "-quux", "foobar", "foobaz"]
--- [("quux",["foobaz","foobar"]),("baz",["qux"]),("bar",[]),("no label",["foo"])]
-parseArgs :: [String] -> [(String, [String])]
-parseArgs args = f args [("no label", [])] where
-    f []     kvs            = kvs
-    f (x:xs) ys@((k,vs):kvs)
-        | isLabel x = f xs ((stripHyphen x, []  ) : ys)
-        | otherwise = f xs ((k            , x:vs) : kvs)
-
--- | is string starts with '-'
--- 
--- >>> isLabel "foo"
--- False
--- 
--- >>> isLabel "-bar"
--- True
-isLabel :: String -> Bool
-isLabel ('-':_) = True
-isLabel _       = False
-
--- | remove hyphens in beginning of string
--- 
--- >>> stripHyphen "--foo"
--- "foo"
--- 
--- >>> stripHyphen "bar"
--- "bar"
-stripHyphen :: String -> String
-stripHyphen ('-':s) = stripHyphen s
-stripHyphen s       = s
-
--- | is filepath starts with '.'
--- 
--- >>> isInvisibleFile ".foo"
--- True
--- 
--- >>> isInvisibleFile "bar"
--- False
-isInvisibleFile :: FilePath -> Bool
-isInvisibleFile []   = False
-isInvisibleFile path = case takeFileName path of
-                         ('.':_) -> True
-                         _       -> False
-isVisibleFile :: FilePath -> Bool
-isVisibleFile = not . isInvisibleFile
-
--- | is filepath ends with any of `markdownExtensions`
--- 
--- >>> isMarkdownFile "foo.md"
--- True
--- 
--- >>> isMarkdownFile "bar.txt"
--- False
-isMarkdownFile :: FilePath -> Bool
-isMarkdownFile file = takeExtension file `elem` markdownExtensions
-
--- | isfilepath ends with any of `htmlExtensions`
--- 
--- >>> isHtmlFile "foo.html"
--- True
--- 
--- >>> isHtmlFile "bar.css"
--- False
-isHtmlFile :: FilePath -> Bool
-isHtmlFile file = takeExtension file `elem` htmlExtensions 
-
--- | convert non-string error to string in Left
--- 
--- >>> strError . Left $ userError "foo"
--- Left "user error (foo)"
--- 
--- >>> strError . Right $ "foo"
--- Right "foo"
-strError :: Show a => Either a b -> Either String b
-strError (Left err) = Left $ show err
-strError (Right r)  = Right r
-
--- | read with Maybe
--- 
--- >>> safeRead "400" :: Maybe Int
--- Just 400
--- 
--- >>> safeRead "bar" :: Maybe Int
--- Nothing
-safeRead :: Read a => String -> Maybe a
-safeRead = fmap fst . listToMaybe . reads
-
--- | convert comma separated values to list of values
--- 
--- >>> csv2texts "foo,bar,baz"
--- ["foo","bar","baz"]
-csv2texts :: Text -> [Text]
-csv2texts = map strip . splitOn ","
-
--- | parse "YYYY-MM-DD" then convert to ModifiedJulianDay
--- 
--- >>> getDayFromText "2000-01-01"
--- Right 51544
-getDayFromText :: Text -> Either String Integer
-getDayFromText = let l = Left "cannot parse pubdate"
-                     r = Right . toModifiedJulianDay
-                 in maybe l r . safeRead . unpack
-
--- | split "---" separated bytestring
--- 
--- >>> splitYamlAndGfm "---\nfoo\n---\nbar"
--- Right ("foo","bar")
-splitYamlAndGfm :: B.ByteString -> Either String (B.ByteString, B.ByteString)
-splitYamlAndGfm body = 
-    let reStr = "---\n+(.*)\n+---\n+(.*)" :: B.ByteString
-        regex = makeRegexOpts compExtended defaultExecOpt reStr
-    in case match regex body of 
-         ((_:y:g:_):_) -> Right (y, g)
-         _             -> Left "yaml and gfm parse error"
-
--- | convert github fravored markdown to html
--- 
--- >>> renderHtml $ gfmStr2html "# foo"
--- "<h1 id=\"foo\">foo</h1>"
-gfmStr2html :: String -> Html
-gfmStr2html = let mdDef = def {readerExtensions = githubMarkdownExtensions}
-              in writeHtml def . readMarkdown mdDef
-
--- | get html file path fron Configure and Article
--- 
--- >>> :{
---  let
---    u        = undefined
---    conf     = Configure u u u "dir" u u u
---    articles = minimal {articleIdNum = 100}
---  in getHtmlFilePath conf articles 
--- :}
--- "dir/archives/100.html"
-getHtmlFilePath :: Configure -> Article -> FilePath
-getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
-                               show (articleIdNum article) ++ ".html"
-
-rfcTime :: UTCTime -> String
-rfcTime = formatTime defaultTimeLocale "%FT%TZ"
-
-filenameEncode :: String -> String
-filenameEncode = let cs = ['\NUL', '/']
-                 in map (\c -> if c `elem` cs then '-' else c)
 
 
 -- IO
@@ -353,4 +191,34 @@ getLastModified file =
 getLogTime :: IO String
 getLogTime = getCurrentTime >>= 
              return . formatTime defaultTimeLocale "[%F %X]"
+
+
+-- Helper
+
+csv2texts :: Text -> [Text]
+csv2texts = map strip . splitOn ","
+
+getDayFromText :: Text -> Either String Integer
+getDayFromText = let l = Left "cannot parse pubdate"
+                     r = Right . toModifiedJulianDay
+                 in maybe l r . safeRead . unpack
+
+splitYamlAndGfm :: B.ByteString -> Either String (B.ByteString, B.ByteString)
+splitYamlAndGfm body = 
+    let reStr = "---\n+(.*)\n+---\n+(.*)" :: B.ByteString
+        regex = makeRegexOpts compExtended defaultExecOpt reStr
+    in case match regex body of 
+         ((_:y:g:_):_) -> Right (y, g)
+         _             -> Left "yaml and gfm parse error"
+
+gfmStr2html :: String -> Html
+gfmStr2html = let mdDef = def {readerExtensions = githubMarkdownExtensions}
+              in writeHtml def . readMarkdown mdDef
+
+getHtmlFilePath :: Configure -> Article -> FilePath
+getHtmlFilePath conf article = htmlDirectory conf </> "archives" </>
+                               show (articleIdNum article) ++ ".html"
+
+
+-- DB
 

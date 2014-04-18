@@ -15,6 +15,7 @@ import           Web.Scotty
 import           System.FilePath ((</>), takeExtension)
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 import Web.Kirstie.IO
 import Web.Kirstie.DB hiding (access')
 

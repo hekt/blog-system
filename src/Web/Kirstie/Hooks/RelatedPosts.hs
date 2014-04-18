@@ -12,6 +12,7 @@ import           Data.Text (Text)
 import           Database.MongoDB hiding (sort, lookup, count)
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 import Web.Kirstie.IO
 import Web.Kirstie.DB
 

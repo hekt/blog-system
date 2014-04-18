@@ -22,6 +22,7 @@ import           System.FilePath ((</>))
 import           System.Locale (defaultTimeLocale)
 
 import Web.Kirstie.Model
+import Web.Kirstie.Util
 import Web.Kirstie.IO
 import Web.Kirstie.DB
 
